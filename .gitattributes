@@ -1,0 +1,2 @@
+# make proto explicit
+*.proto linguist-language=Protocol Buffer
