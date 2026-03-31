@@ -6,10 +6,11 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.karstonn.alarm.R;
 
 public class MainActivity extends AppCompatActivity {
+
+    //RepoSchedulerBinder binder = new RepoSchedulerBinder();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +21,8 @@ public class MainActivity extends AppCompatActivity {
         btnOn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Button clicked", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Alarm set for 1 from now", Toast.LENGTH_SHORT).show();
+
             }
         });
     }

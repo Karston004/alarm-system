@@ -1,0 +1,138 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+package alarm_system.v1;
+
+// --------- Shared Domain Types ---------
+enum DayOfWeek {
+  DAY_UNSPECIFIED = 0;
+  MONDAY = 1;
+  TUESDAY = 2;
+  WEDNESDAY = 3;
+  THURSDAY = 4;
+  FRIDAY = 5;
+  SATURDAY = 6;
+  SUNDAY = 7;
+}
+
+message RGB {
+  uint32 r = 1;
+  uint32 g = 2;
+  uint32 b = 3;
+}
+
+// -- Action Configs --
+message TurnOnLight {
+  string device_id = 1;
+  RGB rgb = 2;
+}
+
+message SoundAlarm {
+  string sound_id = 1;
+  uint32 volume = 2;
+}
+
+// -- Action Wrapper --
+
+message Action {
+  string id = 1;
+
+  oneof config{
+    TurnOnLight turn_on_light = 2;
+    SoundAlarm sound_alarm = 3;
+  }
+}
+
+// -- Alarm Structure --
+message AlarmId {
+  string id = 1;
+}
+
+message AlarmPhaseId {
+  string alarm_id = 1;
+  string phase_id = 2;
+}
+
+message AlarmPhase{
+  string phase_id = 1;
+  google.protobuf.Timestamp trigger_time = 2;
+  string label = 3;
+  repeated Action actions = 4;
+}
+
+message Alarm {
+  AlarmId id = 1;
+  repeated AlarmPhase alarm_phases = 2;
+  repeated DayOfWeek days = 3;
+  bool is_recurring = 4;
+}
+
+// --------- Alarm Repo Service Request/Response ---------
+
+message UpdateAlarmRequest{
+  AlarmId id = 1;
+  Alarm alarm = 2;
+}
+
+message alarmRequestResponse{
+  bool success = 1;
+}
+
+// --------- Alarm Repo Service ---------
+
+service AlarmRepoService {
+  rpc GetAlarm(AlarmId) returns (Alarm);
+  rpc AddAlarm(Alarm) returns (alarmRequestResponse);
+  rpc UpdateAlarm(UpdateAlarmRequest) returns (alarmRequestResponse);
+  rpc RemoveAlarm(AlarmId) returns (alarmRequestResponse);
+}
+
+// --------- Action Execution Service Request/Response ---------
+
+message ActionExecutionRequest{
+  AlarmPhaseId alarm_phase_id = 1;
+  repeated Action actions = 2;
+}
+
+message ActionExecutionResult{
+  string action_id = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message ActionExecutionsResponse{
+  AlarmPhaseId alarm_phase_id = 1;
+  repeated ActionExecutionResult results = 2;
+}
+
+// --------- Action Execution Service ---------
+
+service ExecutionService {
+  rpc TriggerAlarmActions(ActionExecutionRequest) returns (ActionExecutionsResponse);
+}
+
+// --------- Service Request/Response ---------
+
+message SnoozeRequest {
+  AlarmPhaseId alarm_phase_id = 1;
+  uint32 snooze_mins = 2;
+  string source_id = 3;
+}
+message SnoozeResponse {
+  bool success = 1;
+}
+
+message DismissRequest {
+  AlarmPhaseId alarm_phase_id = 1;
+  string source_id = 2;
+}
+message DismissResponse {
+  bool success = 1;
+}
+
+// --------- Service ---------
+
+service AlarmRunTimeService {
+    rpc SnoozeAlarm(SnoozeRequest) returns (SnoozeResponse);
+    rpc DismissAlarm(DismissRequest) returns (DismissResponse);
+}
