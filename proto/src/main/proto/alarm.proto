@@ -1,7 +1,12 @@
 syntax = "proto3";
-import "google/protobuf/timestamp.proto";
 
 package alarm_system.v1;
+
+option java_package = "com.karstonn.alarmsystem.proto";
+option java_multiple_files = true;
+option java_outer_classname = "AlarmSystemProto";
+
+import "google/protobuf/timestamp.proto";
 
 // --------- Shared Domain Types ---------
 enum DayOfWeek {
@@ -74,17 +79,26 @@ message UpdateAlarmRequest{
   Alarm alarm = 2;
 }
 
-message alarmRequestResponse{
+message AlarmRequestResponse{
   bool success = 1;
+}
+
+message AlarmListRequest {
+  //empty
+}
+
+message AlarmListResponse {
+  repeated Alarm alarms = 1;
 }
 
 // --------- Alarm Repo Service ---------
 
 service AlarmRepoService {
   rpc GetAlarm(AlarmId) returns (Alarm);
-  rpc AddAlarm(Alarm) returns (alarmRequestResponse);
-  rpc UpdateAlarm(UpdateAlarmRequest) returns (alarmRequestResponse);
-  rpc RemoveAlarm(AlarmId) returns (alarmRequestResponse);
+  rpc AddAlarm(Alarm) returns (AlarmRequestResponse);
+  rpc UpdateAlarm(UpdateAlarmRequest) returns (AlarmRequestResponse);
+  rpc RemoveAlarm(AlarmId) returns (AlarmRequestResponse);
+  rpc ListAlarms(AlarmListRequest) returns (AlarmListResponse);
 }
 
 // --------- Action Execution Service Request/Response ---------

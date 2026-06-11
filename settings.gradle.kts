@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Alarm"
 include(":app")
+include(":proto")
+include(":backend")
