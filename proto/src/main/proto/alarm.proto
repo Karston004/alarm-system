@@ -6,8 +6,6 @@ option java_package = "com.karstonn.alarmsystem.proto";
 option java_multiple_files = true;
 option java_outer_classname = "AlarmSystemProto";
 
-import "google/protobuf/timestamp.proto";
-
 // --------- Shared Domain Types ---------
 enum DayOfWeek {
   DAY_UNSPECIFIED = 0;
@@ -26,9 +24,13 @@ message RGB {
   uint32 b = 3;
 }
 
+message TimeOfDay {
+  uint32 hour = 1;
+  uint32 min = 2;
+}
+
 // -- Action Configs --
 message TurnOnLight {
-  string device_id = 1;
   RGB rgb = 2;
 }
 
@@ -41,10 +43,11 @@ message SoundAlarm {
 
 message Action {
   string id = 1;
-
+  string label = 2;
+  string device_id = 3;
   oneof config{
-    TurnOnLight turn_on_light = 2;
-    SoundAlarm sound_alarm = 3;
+    TurnOnLight turn_on_light = 4;
+    SoundAlarm sound_alarm = 5;
   }
 }
 
@@ -54,22 +57,24 @@ message AlarmId {
 }
 
 message AlarmPhaseId {
-  string alarm_id = 1;
+  AlarmId alarm_id = 1;
   string phase_id = 2;
 }
 
 message AlarmPhase{
   string phase_id = 1;
-  google.protobuf.Timestamp trigger_time = 2;
+  TimeOfDay trigger_time = 2;
   string label = 3;
   repeated Action actions = 4;
 }
 
 message Alarm {
   AlarmId id = 1;
-  repeated AlarmPhase alarm_phases = 2;
-  repeated DayOfWeek days = 3;
-  bool is_recurring = 4;
+  string label = 2;
+  repeated AlarmPhase alarm_phases = 3;
+  repeated DayOfWeek days = 4;
+  bool is_recurring = 5;
+  bool is_enabled = 6;
 }
 
 // --------- Alarm Repo Service Request/Response ---------
