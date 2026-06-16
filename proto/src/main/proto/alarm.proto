@@ -41,7 +41,7 @@ message TimeOfDay {
 }
 
 // -- Action Configs --
-// THIS MUST BE MANUALLY LINKED WITH ParameterType!!
+// THIS MUST BE MANUALLY LINKED WITH ActionValueType!!
 // no trick in protobuf to do this :(
 message ActionValue {
   oneof value {
