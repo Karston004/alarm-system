@@ -18,10 +18,21 @@ enum DayOfWeek {
   SUNDAY = 7;
 }
 
-message RGB {
-  uint32 r = 1;
-  uint32 g = 2;
-  uint32 b = 3;
+message RGBA {
+  uint32 rgba = 1;
+}
+
+message Percentage {
+  uint32 value = 1;
+}
+
+message FileData {
+  string filename = 1;
+  string file_type = 2;
+  uint64 size_bytes = 3;
+  //This is a potential issue for data bloat
+  //e.g. multiple copies of a large audio file being stored
+  bytes file_content = 4;
 }
 
 message TimeOfDay {
@@ -30,13 +41,26 @@ message TimeOfDay {
 }
 
 // -- Action Configs --
-message TurnOnLight {
-  RGB rgb = 2;
+message ActionValue {
+  oneof value {
+    string string_val = 1;
+    uint32 uint32_val = 2;
+    int32 int32_val = 3;
+    bool bool_val = 4;
+    RGBA rgba_val = 5;
+    Percentage percentage = 6;
+    FileData file = 7;
+    double double_val = 8;
+  }
 }
 
-message SoundAlarm {
-  string sound_id = 1;
-  uint32 volume = 2;
+message ActionParameter {
+  string parameter_id = 1;
+  string parameter_key = 2;
+  string label = 3;
+  ActionValue value = 4;
+  optional string units = 5;
+
 }
 
 // -- Action Wrapper --
@@ -45,10 +69,10 @@ message Action {
   string id = 1;
   string label = 2;
   string device_id = 3;
-  oneof config{
-    TurnOnLight turn_on_light = 4;
-    SoundAlarm sound_alarm = 5;
-  }
+  //Specify action type on device
+  //(i.e. one device may have multiple possible actions)
+  string action_type_id = 4;
+  repeated ActionParameter parameters = 5;
 }
 
 // -- Alarm Structure --
