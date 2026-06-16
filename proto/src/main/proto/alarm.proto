@@ -41,6 +41,8 @@ message TimeOfDay {
 }
 
 // -- Action Configs --
+// THIS MUST BE MANUALLY LINKED WITH ParameterType!!
+// no trick in protobuf to do this :(
 message ActionValue {
   oneof value {
     string string_val = 1;
@@ -68,10 +70,10 @@ message ActionParameter {
 message Action {
   string id = 1;
   string label = 2;
-  string device_id = 3;
+  DeviceId device_id = 3;
   //Specify action type on device
   //(i.e. one device may have multiple possible actions)
-  string action_type_id = 4;
+  DeviceCapabilityKey device_action_key = 4;
   repeated ActionParameter parameters = 5;
 }
 
@@ -154,12 +156,12 @@ service ExecutionService {
   rpc TriggerAlarmActions(ActionExecutionRequest) returns (ActionExecutionsResponse);
 }
 
-// --------- Service Request/Response ---------
+// --------- External Controller Service Request/Response ---------
 
 message SnoozeRequest {
   AlarmPhaseId alarm_phase_id = 1;
   uint32 snooze_mins = 2;
-  string source_id = 3;
+  DeviceId device_id = 3;
 }
 message SnoozeResponse {
   bool success = 1;
@@ -167,15 +169,83 @@ message SnoozeResponse {
 
 message DismissRequest {
   AlarmPhaseId alarm_phase_id = 1;
-  string source_id = 2;
+  DeviceId device_id = 2;
 }
 message DismissResponse {
   bool success = 1;
 }
 
-// --------- Service ---------
+// --------- External Controller Service ---------
 
 service AlarmRunTimeService {
     rpc SnoozeAlarm(SnoozeRequest) returns (SnoozeResponse);
     rpc DismissAlarm(DismissRequest) returns (DismissResponse);
+}
+
+// --------- Device Types ---------
+// THIS MUST BE MANUALLY LINKED WITH ActionValue!!
+// no trick in protobuf to do this :(
+enum ActionValueType {
+  PARAMETER_TYPE_UNSPECIFIED = 0;
+  PARAMETER_TYPE_STRING = 1;
+  PARAMETER_TYPE_UINT32 = 2;
+  PARAMETER_TYPE_INT32 = 3;
+  PARAMETER_TYPE_BOOL = 4;
+  PARAMETER_TYPE_RGBA = 5;
+  PARAMETER_TYPE_PERCENTAGE = 6;
+  PARAMETER_TYPE_FILE = 7;
+  PARAMETER_TYPE_DOUBLE = 8;
+}
+
+message DeviceId {
+  string id = 1;
+}
+
+message DeviceCapabilityKey {
+  string key = 1;
+}
+
+message ParameterRequirement {
+  string key = 1;
+  string label = 2;
+  ActionValueType type = 3;
+}
+
+message DeviceCapability {
+  DeviceCapabilityKey key = 1;
+  repeated ParameterRequirement parameter_requirements = 2;
+}
+
+message Device {
+  DeviceId device_id= 1;
+  repeated DeviceCapability capabilities = 2;
+}
+
+// --------- Device Register Service Request/Response ---------
+
+message UpdateDeviceRequest{
+  DeviceId id = 1;
+  Device device = 2;
+}
+
+message DeviceRequestResponse{
+  bool success = 1;
+}
+
+message DeviceListRequest {
+  //empty
+}
+
+message DeviceListResponse {
+  repeated Device devices = 1;
+}
+
+// --------- Device Register Service ---------
+
+service DeviceRegistryService{
+  rpc GetDevice(DeviceId) returns (Device);
+  rpc AddDevice(Device) returns (DeviceRequestResponse);
+  rpc UpdateDevice(UpdateDeviceRequest) returns (DeviceRequestResponse);
+  rpc RemoveDevice(DeviceId) returns (DeviceRequestResponse);
+  rpc ListDevices(DeviceListRequest) returns (DeviceListResponse);
 }
