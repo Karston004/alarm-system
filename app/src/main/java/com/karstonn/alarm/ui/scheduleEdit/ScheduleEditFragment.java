@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarm.ui.phaseEdit.PhaseEditFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,11 +51,11 @@ public class ScheduleEditFragment extends Fragment {
 
         phaseListAdapter = new PhaseListAdapter(
                 phases,
-                phase -> Toast.makeText(
-                        requireContext(),
-                        "Clicked phase: " + phase.getName(),
-                        Toast.LENGTH_SHORT
-                ).show()
+                phase -> getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, new PhaseEditFragment())
+                        .addToBackStack(null)
+                        .commit()
         );
 
         phaseRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
