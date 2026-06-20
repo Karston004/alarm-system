@@ -15,7 +15,9 @@ import java.util.List;
 public class ScheduleListAdapter extends RecyclerView.Adapter<ScheduleListAdapter.ScheduleViewHolder> {
 
     public interface OnScheduleClickListener {
-        void onScheduleClick(DebugScheduleItem schedule);
+        void onNameClick (DebugScheduleItem schedule);
+        void onStatusClick(DebugScheduleItem schedule);
+
     }
 
     private final List<DebugScheduleItem> schedules;
@@ -56,7 +58,13 @@ public class ScheduleListAdapter extends RecyclerView.Adapter<ScheduleListAdapte
 
         holder.scheduleStatusCircle.setBackgroundResource(statusDrawable);
 
-        holder.itemView.setOnClickListener(v -> clickListener.onScheduleClick(schedule));
+        holder.scheduleNameText.setOnClickListener(v ->
+                clickListener.onNameClick(schedule)
+        );
+
+        holder.scheduleStatusCircle.setOnClickListener(v ->
+                clickListener.onStatusClick(schedule)
+        );
     }
 
     @Override
@@ -64,7 +72,7 @@ public class ScheduleListAdapter extends RecyclerView.Adapter<ScheduleListAdapte
         return schedules.size();
     }
 
-    static class ScheduleViewHolder extends RecyclerView.ViewHolder {
+    static public class ScheduleViewHolder extends RecyclerView.ViewHolder {
         private final TextView scheduleNameText;
         private final View scheduleStatusCircle;
 

@@ -49,11 +49,25 @@ public class ScheduleListFragment extends Fragment {
 
         scheduleListAdapter = new ScheduleListAdapter(
                 schedules,
-                schedule -> Toast.makeText(
-                        requireContext(),
-                        "Clicked: " + schedule.getName(),
-                        Toast.LENGTH_SHORT
-                ).show()
+                new ScheduleListAdapter.OnScheduleClickListener() {
+                    @Override
+                    public void onNameClick(DebugScheduleItem schedule) {
+                        Toast.makeText(
+                                requireContext(),
+                                "Name clicked: " + schedule.getName(),
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onStatusClick(DebugScheduleItem schedule) {
+                        Toast.makeText(
+                                requireContext(),
+                                "Status clicked: " + schedule.getName(),
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
         );
 
         scheduleRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -75,6 +89,16 @@ public class ScheduleListFragment extends Fragment {
         schedules.add(new DebugScheduleItem("Morning Alarm 2", true));
         schedules.add(new DebugScheduleItem("Schedule 3", false));
         schedules.add(new DebugScheduleItem("Schedule Name 4", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 5", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 6", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 7", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 8", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 9", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 10", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 11", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 12", true));
+        schedules.add(new DebugScheduleItem("Schedule Name 13", true));
+
 
         return schedules;
     }
