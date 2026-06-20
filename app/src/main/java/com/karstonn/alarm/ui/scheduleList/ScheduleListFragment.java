@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarm.ui.scheduleEdit.ScheduleEditFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,11 +53,11 @@ public class ScheduleListFragment extends Fragment {
                 new ScheduleListAdapter.OnScheduleClickListener() {
                     @Override
                     public void onNameClick(DebugScheduleItem schedule) {
-                        Toast.makeText(
-                                requireContext(),
-                                "Name clicked: " + schedule.getName(),
-                                Toast.LENGTH_SHORT
-                        ).show();
+                        getParentFragmentManager()
+                                .beginTransaction()
+                                .replace(R.id.fragmentContainer, new ScheduleEditFragment())
+                                .addToBackStack(null)
+                                .commit();
                     }
 
                     @Override

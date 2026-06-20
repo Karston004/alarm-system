@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:orientation="vertical"
+    android:padding="24dp"
+    tools:context=".ui.scheduleedit.ScheduleEditFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@drawable/rounded_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/repeatButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/circle_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="TEMP"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/scheduleEditTitle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Schedule"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/toggleScheduleButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/circle_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="✓"
+            android:textSize="22sp" />
+
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/scheduleNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/rounded_card"
+        android:hint="Name:"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:singleLine="true" />
+
+    <LinearLayout
+        android:id="@+id/dayButtonRow"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ToggleButton
+            android:id="@+id/mondayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="M"
+            android:textOn="M" />
+
+        <ToggleButton
+            android:id="@+id/tuesdayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="T"
+            android:textOn="T" />
+
+        <ToggleButton
+            android:id="@+id/wednesdayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="W"
+            android:textOn="W" />
+
+        <ToggleButton
+            android:id="@+id/thursdayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="T"
+            android:textOn="T" />
+
+        <ToggleButton
+            android:id="@+id/fridayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="F"
+            android:textOn="F" />
+
+        <ToggleButton
+            android:id="@+id/saturdayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="S"
+            android:textOn="S" />
+
+        <ToggleButton
+            android:id="@+id/sundayButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:textOff="S"
+            android:textOn="S" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/rounded_card"
+        android:gravity="center"
+        android:text="Phases"
+        android:textSize="20sp" />
+
+    <FrameLayout
+        android:id="@+id/phaseListBox"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1"
+        android:background="@drawable/rounded_card">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/phaseRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            android:paddingBottom="88dp" />
+
+        <TextView
+            android:id="@+id/addPhaseButton"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="12dp"
+            android:background="@drawable/circle_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="+"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+    </FrameLayout>
+
+</LinearLayout>
