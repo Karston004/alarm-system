@@ -31,16 +31,22 @@
             android:layout_height="match_parent"
             android:padding="8dp" />
 
-        <Button
+        <TextView
             android:id="@+id/addScheduleButton"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_gravity="bottom|end"
             android:layout_margin="8dp"
+            android:background="@drawable/circle_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
             android:text="+"
+            android:textColor="#111111"
             android:textSize="32sp" />
 
     </FrameLayout>
+
 
     <LinearLayout
         android:id="@+id/serviceConfigBox"
@@ -80,11 +86,19 @@
             android:text="@string/service_configuration_menu"
             android:textSize="14sp" />
 
-        <Button
+        <TextView
             android:id="@+id/serviceConfigButton"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:text="=" />
+            android:layout_gravity="bottom|end"
+            android:background="@drawable/circle_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="="
+            android:textSize="32sp"
+            android:textColor="#111111" />
+
 
     </LinearLayout>
 
