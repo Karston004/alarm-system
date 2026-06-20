@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarm.ui.actionEdit.ActionEditFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,11 +56,11 @@ public class PhaseEditFragment extends Fragment {
 
         actionListAdapter = new ActionListAdapter(
                 actions,
-                action -> Toast.makeText(
-                        requireContext(),
-                        "Clicked action: " + action.getName(),
-                        Toast.LENGTH_SHORT
-                ).show()
+                action -> getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, new ActionEditFragment())
+                        .addToBackStack(null)
+                        .commit()
         );
 
         actionRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -69,7 +70,11 @@ public class PhaseEditFragment extends Fragment {
         phaseTimeButton.setOnClickListener(v -> showTimePicker(phaseTimeButton));
 
         view.findViewById(R.id.addActionButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Add action clicked", Toast.LENGTH_SHORT).show()
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, new ActionEditFragment())
+                        .addToBackStack(null)
+                        .commit()
         );
     }
 
