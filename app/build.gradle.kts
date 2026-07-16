@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.constraintlayout)
 
     implementation(project(":proto"))
+    implementation(project(":repos:java"))
     implementation(libs.recyclerview)
 
     testImplementation(libs.junit)
