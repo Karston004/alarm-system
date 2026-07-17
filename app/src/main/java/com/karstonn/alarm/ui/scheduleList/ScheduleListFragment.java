@@ -56,9 +56,29 @@ public class ScheduleListFragment extends Fragment {
         scheduleListVm = new ViewModelProvider(this)
                 .get(ScheduleListViewModel.class);
 
+        scheduleListVm.setAlarmRepo(repo);
         scheduleListVm.fetchSchedulesFromRepo();
-        List<AlarmListing> schedules = scheduleListVm.scheduleDisplayInfos;
 
+        setUpScheduleRecyclerView(view);
+
+        //setup addAlarm
+        view.findViewById(R.id.addScheduleButton).setOnClickListener(v ->
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, new ScheduleEditFragment().newEmptyAlarm())
+                        .addToBackStack(null)
+                        .commit());
+
+        //setup bottom box
+        view.findViewById(R.id.serviceConfigButton).setOnClickListener(v ->
+                Toast.makeText(requireContext(), "Service config clicked", Toast.LENGTH_SHORT).show()
+        );
+    }
+
+    private void setUpScheduleRecyclerView (
+            @NonNull View view
+    ){
+        List<AlarmListing> schedules = scheduleListVm.getScheduleDisplayInfos();
         scheduleListAdapter = new ScheduleListAdapter(
                 schedules,
                 new ScheduleListAdapter.OnScheduleClickListener() {
@@ -84,23 +104,5 @@ public class ScheduleListFragment extends Fragment {
 
         scheduleRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         scheduleRecyclerView.setAdapter(scheduleListAdapter);
-
-        view.findViewById(R.id.addScheduleButton).setOnClickListener(v ->
-                getParentFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer, new ScheduleEditFragment().newEmptyAlarm())
-                        .addToBackStack(null)
-                        .commit());
-
-        view.findViewById(R.id.serviceConfigButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Service config clicked", Toast.LENGTH_SHORT).show()
-        );
-    }
-
-    private List<Alarm> getSchedules() {
-
-        List<Alarm> schedules = new ArrayList<>();
-
-        return schedules;
     }
 }
