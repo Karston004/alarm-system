@@ -9,22 +9,23 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarmsystem.proto.Alarm;
+import com.karstonn.alarmsystem.proto.AlarmListing;
 
 import java.util.List;
 
 public class ScheduleListAdapter extends RecyclerView.Adapter<ScheduleListAdapter.ScheduleViewHolder> {
-
     public interface OnScheduleClickListener {
-        void onNameClick (DebugScheduleItem schedule);
-        void onStatusClick(DebugScheduleItem schedule);
+        void onNameClick (AlarmListing schedule);
+        void onStatusClick(AlarmListing schedule);
 
     }
 
-    private final List<DebugScheduleItem> schedules;
+    private final List<AlarmListing> schedules;
     private final OnScheduleClickListener clickListener;
 
     public ScheduleListAdapter(
-            List<DebugScheduleItem> schedules,
+            List<AlarmListing> schedules,
             OnScheduleClickListener clickListener
     ) {
         this.schedules = schedules;
@@ -48,11 +49,11 @@ public class ScheduleListAdapter extends RecyclerView.Adapter<ScheduleListAdapte
             @NonNull ScheduleViewHolder holder,
             int position
     ) {
-        DebugScheduleItem schedule = schedules.get(position);
+        AlarmListing schedule = schedules.get(position);
 
-        holder.scheduleNameText.setText(schedule.getName());
+        holder.scheduleNameText.setText(schedule.getLabel());
 
-        int statusDrawable = schedule.isEnabled()
+        int statusDrawable = schedule.getIsEnabled()
                 ? R.drawable.status_green
                 : R.drawable.status_red;
 

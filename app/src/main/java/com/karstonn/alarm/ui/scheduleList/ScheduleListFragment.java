@@ -9,17 +9,24 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.karstonn.alarm.AlarmRepo;
+import com.karstonn.alarm.InMemoryAlarmRepo;
 import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.scheduleEdit.ScheduleEditFragment;
+import com.karstonn.alarmsystem.proto.Alarm;
+import com.karstonn.alarmsystem.proto.AlarmListing;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ScheduleListFragment extends Fragment {
-
+    //Current Repo hardcoded - TODO: Make dynamic repo choice
+    private static AlarmRepo repo = new InMemoryAlarmRepo();
+    private ScheduleListViewModel scheduleListVm;
     private RecyclerView scheduleRecyclerView;
     private ScheduleListAdapter scheduleListAdapter;
 
@@ -46,25 +53,29 @@ public class ScheduleListFragment extends Fragment {
 
         scheduleRecyclerView = view.findViewById(R.id.scheduleRecyclerView);
 
-        List<DebugScheduleItem> schedules = createDebugSchedules();
+        scheduleListVm = new ViewModelProvider(this)
+                .get(ScheduleListViewModel.class);
+
+        scheduleListVm.fetchSchedulesFromRepo();
+        List<AlarmListing> schedules = scheduleListVm.scheduleDisplayInfos;
 
         scheduleListAdapter = new ScheduleListAdapter(
                 schedules,
                 new ScheduleListAdapter.OnScheduleClickListener() {
                     @Override
-                    public void onNameClick(DebugScheduleItem schedule) {
+                    public void onNameClick(AlarmListing schedule) {
                         getParentFragmentManager()
                                 .beginTransaction()
-                                .replace(R.id.fragmentContainer, new ScheduleEditFragment())
+                                .replace(R.id.fragmentContainer, ScheduleEditFragment.newInstance(repo.getAlarm(schedule.getId())))
                                 .addToBackStack(null)
                                 .commit();
                     }
 
                     @Override
-                    public void onStatusClick(DebugScheduleItem schedule) {
+                    public void onStatusClick(AlarmListing schedule) {
                         Toast.makeText(
                                 requireContext(),
-                                "Status clicked: " + schedule.getName(),
+                                "Status clicked: " + schedule.getLabel(),
                                 Toast.LENGTH_SHORT
                         ).show();
                     }
@@ -75,31 +86,20 @@ public class ScheduleListFragment extends Fragment {
         scheduleRecyclerView.setAdapter(scheduleListAdapter);
 
         view.findViewById(R.id.addScheduleButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Add schedule clicked", Toast.LENGTH_SHORT).show()
-        );
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, new ScheduleEditFragment().newEmptyAlarm())
+                        .addToBackStack(null)
+                        .commit());
 
         view.findViewById(R.id.serviceConfigButton).setOnClickListener(v ->
                 Toast.makeText(requireContext(), "Service config clicked", Toast.LENGTH_SHORT).show()
         );
     }
 
-    private List<DebugScheduleItem> createDebugSchedules() {
-        List<DebugScheduleItem> schedules = new ArrayList<>();
+    private List<Alarm> getSchedules() {
 
-        schedules.add(new DebugScheduleItem("Schedule Name 1", true));
-        schedules.add(new DebugScheduleItem("Morning Alarm 2", true));
-        schedules.add(new DebugScheduleItem("Schedule 3", false));
-        schedules.add(new DebugScheduleItem("Schedule Name 4", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 5", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 6", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 7", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 8", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 9", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 10", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 11", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 12", true));
-        schedules.add(new DebugScheduleItem("Schedule Name 13", true));
-
+        List<Alarm> schedules = new ArrayList<>();
 
         return schedules;
     }
