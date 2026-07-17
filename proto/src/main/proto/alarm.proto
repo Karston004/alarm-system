@@ -118,8 +118,14 @@ message AlarmListRequest {
   //empty
 }
 
+message AlarmListing {
+  AlarmId id = 1;
+  string label = 2;
+  bool isEnabled = 3;
+}
+
 message AlarmListResponse {
-  repeated Alarm alarms = 1;
+  repeated  AlarmListing alarms = 1;
 }
 
 // --------- Alarm Repo Service ---------
