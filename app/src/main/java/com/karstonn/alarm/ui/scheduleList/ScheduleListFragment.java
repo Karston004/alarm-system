@@ -60,19 +60,10 @@ public class ScheduleListFragment extends Fragment {
         scheduleListVm.fetchSchedulesFromRepo();
 
         setUpScheduleRecyclerView(view);
+        setupAddAlarm(view);
+        setupBottomBox(view);
 
-        //setup addAlarm
-        view.findViewById(R.id.addScheduleButton).setOnClickListener(v ->
-                getParentFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragmentContainer, new ScheduleEditFragment().newEmptyAlarm())
-                        .addToBackStack(null)
-                        .commit());
 
-        //setup bottom box
-        view.findViewById(R.id.serviceConfigButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Service config clicked", Toast.LENGTH_SHORT).show()
-        );
     }
 
     private void setUpScheduleRecyclerView (
@@ -104,5 +95,24 @@ public class ScheduleListFragment extends Fragment {
 
         scheduleRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         scheduleRecyclerView.setAdapter(scheduleListAdapter);
+    }
+
+    private void setupAddAlarm (
+            @NonNull View view
+    ){
+        view.findViewById(R.id.addScheduleButton).setOnClickListener(v ->
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragmentContainer, ScheduleEditFragment.newEmptyAlarm())
+                        .addToBackStack(null)
+                        .commit());
+    }
+
+    private void setupBottomBox(
+            @NonNull View view
+    ){
+        view.findViewById(R.id.serviceConfigButton).setOnClickListener(v ->
+                Toast.makeText(requireContext(), "Service config clicked", Toast.LENGTH_SHORT).show()
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.karstonn.alarm.ui.scheduleList;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 
 import com.karstonn.alarm.AlarmRepo;
@@ -13,11 +14,9 @@ public class ScheduleListViewModel extends ViewModel {
     private final List<AlarmListing> scheduleDisplayInfos = new ArrayList<>();
     private AlarmRepo repo;
 
-    public void setAlarmRepo(AlarmRepo repo) {
-        if (repo == null) {
-            throw new IllegalArgumentException("AlarmRepo cannot be null");
-        }
-
+    public void setAlarmRepo(
+            @NonNull AlarmRepo repo
+    ) {
         this.repo = repo;
     }
 
@@ -33,7 +32,7 @@ public class ScheduleListViewModel extends ViewModel {
         }
 
         AlarmListResponse response = repo.listAlarms();
-
+        //TODO - keep local cache for optimistic updates
         scheduleDisplayInfos.clear();
         scheduleDisplayInfos.addAll(response.getAlarmsList());
     }
