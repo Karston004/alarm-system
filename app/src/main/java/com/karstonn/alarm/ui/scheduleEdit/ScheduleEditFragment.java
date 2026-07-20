@@ -10,6 +10,7 @@ import android.widget.ToggleButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -17,15 +18,13 @@ import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.phaseEdit.PhaseEditFragment;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
-import com.karstonn.alarmsystem.proto.TimeOfDay;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ScheduleEditFragment extends Fragment {
 
     private static final String ARG_ALARM_BYTES = "alarm_bytes";
-    private Alarm alarm;
+    private ScheduleEditViewModel scheduleEditVm;
     private RecyclerView phaseRecyclerView;
     private PhaseListAdapter phaseListAdapter;
 
@@ -38,7 +37,6 @@ public class ScheduleEditFragment extends Fragment {
 
         Bundle args = new Bundle();
         args.putByteArray(ARG_ALARM_BYTES, alarm.toByteArray());
-
         fragment.setArguments(args);
         return fragment;
     }
@@ -57,9 +55,12 @@ public class ScheduleEditFragment extends Fragment {
 
         Bundle args = getArguments();
 
+        scheduleEditVm = new ViewModelProvider(this)
+                .get(ScheduleEditViewModel.class);
+
         if (args != null && args.containsKey(ARG_ALARM_BYTES)) {
             try {
-                alarm = Alarm.parseFrom(args.getByteArray(ARG_ALARM_BYTES));
+                scheduleEditVm.loadAlarm(Alarm.parseFrom(args.getByteArray(ARG_ALARM_BYTES)));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse Alarm from arguments", e);
             }
@@ -85,8 +86,8 @@ public class ScheduleEditFragment extends Fragment {
 
         phaseRecyclerView = view.findViewById(R.id.phaseRecyclerView);
 
-        List<AlarmPhase> phases = createDebugPhases();
-
+        //Setup Phase list
+        List<AlarmPhase> phases = scheduleEditVm.getDraftAlarm().getAlarmPhasesList();
         phaseListAdapter = new PhaseListAdapter(
                 phases,
                 phase -> getParentFragmentManager()
@@ -95,42 +96,39 @@ public class ScheduleEditFragment extends Fragment {
                         .addToBackStack(null)
                         .commit()
         );
-
         phaseRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         phaseRecyclerView.setAdapter(phaseListAdapter);
 
-        setupDebugDayButtons(view);
+        //Setup Day Selection
+        setupDayButtons(view);
 
-        view.findViewById(R.id.repeatButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Repeat pressed", Toast.LENGTH_SHORT).show()
+        //Setup Looping Toggle
+        view.findViewById(R.id.repeatButton).setOnClickListener(v ->{
+                Toast.makeText(requireContext(), "Repeat pressed", Toast.LENGTH_SHORT).show();
+                scheduleEditVm.updateAlarm(builder ->
+                        builder.setIsRecurring(!builder.getIsRecurring()));
+
+                }
         );
 
-        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Schedule toggled", Toast.LENGTH_SHORT).show()
+        //Setup Alarm Toggle
+        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v ->{
+                Toast.makeText(requireContext(), "Schedule toggled", Toast.LENGTH_SHORT).show();
+                scheduleEditVm.updateAlarm(builder ->
+                        builder.setIsEnabled(!builder.getIsEnabled()));
+                }
         );
 
-        view.findViewById(R.id.addPhaseButton).setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Add phase clicked", Toast.LENGTH_SHORT).show()
+        //Setup Add Phase Button
+        view.findViewById(R.id.addPhaseButton).setOnClickListener(v -> {
+                Toast.makeText(requireContext(), "Add phase clicked", Toast.LENGTH_SHORT).show();
+
+                }
         );
     }
 
-    private List<AlarmPhase> createDebugPhases() {
-        List<AlarmPhase> phases = new ArrayList<>();
-
-        phases.add(AlarmPhase
-                .newBuilder()
-                .setLabel("Test Phase")
-                .setTriggerTime(TimeOfDay
-                        .newBuilder()
-                        .setHour(7)
-                        .setMin(30)
-                        .build())
-                .build());
-
-        return phases;
-    }
-
-    private void setupDebugDayButtons(View view) {
+    //TODO link to builder
+    private void setupDayButtons(View view) {
         int[] dayButtonIds = {
                 R.id.mondayButton,
                 R.id.tuesdayButton,
