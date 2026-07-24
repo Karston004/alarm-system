@@ -203,11 +203,33 @@
         android:padding="8dp">
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/deleteButton"
+            style="@style/Widget.MaterialComponents.Button.Icon"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:contentDescription="Cancel Schedule"
+            android:padding="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:layout_marginEnd="8dp"
+            app:cornerRadius="24dp"
+            android:backgroundTint="@color/red"
+            app:icon="@drawable/ic_delete"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="28dp"
+            app:iconTint="@color/white"
+            />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/cancelButton"
             style="@style/Widget.MaterialComponents.Button.Icon"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="3"
             android:contentDescription="Cancel Schedule"
             android:padding="0dp"
             android:insetLeft="0dp"
@@ -229,7 +251,7 @@
             style="@style/Widget.MaterialComponents.Button.Icon"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="2"
+            android:layout_weight="5"
             android:contentDescription="Confirm Schedule"
             android:padding="0dp"
             android:insetLeft="0dp"

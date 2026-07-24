@@ -7,7 +7,6 @@ import com.karstonn.alarm.AlarmRepo;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.UpdateAlarmRequest;
 
-import java.sql.Struct;
 import java.util.function.Consumer;
 
 
@@ -49,6 +48,12 @@ public class ScheduleEditViewModel extends ViewModel {
                   .setAlarm(draftAlarm).build());
           hasUnsavedChanges = false;
         }
+    }
+
+    public void deleteAlarm(){
+        requireDraft();
+        requireRepo();
+        repo.removeAlarm(draftAlarm.getId());
     }
 
     public boolean hasDraftAlarm(){

@@ -124,19 +124,15 @@ public class ScheduleEditFragment extends Fragment {
 
         // Setup Looping Toggle
         ((MaterialButton)view.findViewById(R.id.repeatButton)).setChecked(scheduleEditVm.getDraftAlarm().getIsRecurring());
-        view.findViewById(R.id.repeatButton).setOnClickListener(v -> {
-            scheduleEditVm.updateAlarm(builder ->
-                    builder.setIsRecurring(!builder.getIsRecurring())
-            );
-        });
+        view.findViewById(R.id.repeatButton).setOnClickListener(v -> scheduleEditVm.updateAlarm(builder ->
+                builder.setIsRecurring(!builder.getIsRecurring())
+        ));
 
         // Setup Alarm Toggle
         ((MaterialButton)view.findViewById(R.id.toggleScheduleButton)).setChecked(scheduleEditVm.getDraftAlarm().getIsEnabled());
-        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v -> {
-            scheduleEditVm.updateAlarm(builder ->
-                    builder.setIsEnabled(!builder.getIsEnabled())
-            );
-        });
+        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v -> scheduleEditVm.updateAlarm(builder ->
+                builder.setIsEnabled(!builder.getIsEnabled())
+        ));
 
         // Setup Add Phase Button
         //TODO
@@ -177,8 +173,12 @@ public class ScheduleEditFragment extends Fragment {
         });
 
         //Cancel Alarm Changes
-        view.findViewById(R.id.cancelButton).setOnClickListener(v-> {
-            showCancelConfirmation();
+        view.findViewById(R.id.cancelButton).setOnClickListener(v-> showCancelConfirmation());
+
+        //Delete Alarm
+        view.findViewById(R.id.deleteButton).setOnClickListener(v -> {
+            scheduleEditVm.deleteAlarm();
+            showDeleteConfirmation();
         });
 
         // Handle Android system Back button / gesture
@@ -253,6 +253,19 @@ public class ScheduleEditFragment extends Fragment {
                 .setNegativeButton("Keep editing", null)
                 .setPositiveButton("Discard", (dialog, which) ->
                         leaveScheduleEditor()
+                )
+                .show();
+    }
+
+    private void showDeleteConfirmation () {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete schedule?")
+                .setMessage("The schedule will be permanently lost.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> {
+                        scheduleEditVm.deleteAlarm();
+                        leaveScheduleEditor();
+                        }
                 )
                 .show();
     }
