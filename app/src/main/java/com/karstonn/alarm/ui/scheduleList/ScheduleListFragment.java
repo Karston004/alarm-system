@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.karstonn.alarm.AlarmApplication;
 import com.karstonn.alarm.AlarmRepo;
 import com.karstonn.alarm.InMemoryAlarmRepo;
 import com.karstonn.alarm.R;
@@ -25,7 +26,6 @@ import java.util.List;
 
 public class ScheduleListFragment extends Fragment {
     //Current Repo hardcoded - TODO: Make dynamic repo choice
-    private static AlarmRepo repo = new InMemoryAlarmRepo();
     private ScheduleListViewModel scheduleListVm;
     private RecyclerView scheduleRecyclerView;
     private ScheduleListAdapter scheduleListAdapter;
@@ -53,10 +53,11 @@ public class ScheduleListFragment extends Fragment {
 
         scheduleRecyclerView = view.findViewById(R.id.scheduleRecyclerView);
 
+        AlarmApplication application = (AlarmApplication) requireActivity().getApplication();
         scheduleListVm = new ViewModelProvider(this)
                 .get(ScheduleListViewModel.class);
 
-        scheduleListVm.setAlarmRepo(repo);
+        scheduleListVm.setAlarmRepo(application.getAlarmRepo());
         scheduleListVm.fetchSchedulesFromRepo();
 
         setUpScheduleRecyclerView(view);
@@ -77,7 +78,7 @@ public class ScheduleListFragment extends Fragment {
                     public void onNameClick(AlarmListing schedule) {
                         getParentFragmentManager()
                                 .beginTransaction()
-                                .replace(R.id.fragmentContainer, ScheduleEditFragment.newInstance(repo.getAlarm(schedule.getId())))
+                                .replace(R.id.fragmentContainer, ScheduleEditFragment.newInstance(scheduleListVm.getAlarm(schedule.getId())))
                                 .addToBackStack(null)
                                 .commit();
                     }
