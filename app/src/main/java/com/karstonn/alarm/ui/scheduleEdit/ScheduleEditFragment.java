@@ -13,12 +13,22 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
+
+import com.google.android.material.button.MaterialButton;
+import com.karstonn.alarm.AlarmApplication;
 import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.phaseEdit.PhaseEditFragment;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
+import com.karstonn.alarmsystem.proto.DayOfWeek;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ScheduleEditFragment extends Fragment {
@@ -57,6 +67,8 @@ public class ScheduleEditFragment extends Fragment {
 
         scheduleEditVm = new ViewModelProvider(this)
                 .get(ScheduleEditViewModel.class);
+        AlarmApplication application = (AlarmApplication) requireActivity().getApplication();
+        scheduleEditVm.setAlarmRepo(application.getAlarmRepo());
 
         if (args != null && args.containsKey(ARG_ALARM_BYTES)) {
             try {
@@ -86,49 +98,102 @@ public class ScheduleEditFragment extends Fragment {
 
         phaseRecyclerView = view.findViewById(R.id.phaseRecyclerView);
 
-        //Setup Phase list
-        List<AlarmPhase> phases = scheduleEditVm.getDraftAlarm().getAlarmPhasesList();
+        // Setup Phase list
+        List<AlarmPhase> phases =
+                scheduleEditVm.getDraftAlarm().getAlarmPhasesList();
+
         phaseListAdapter = new PhaseListAdapter(
                 phases,
                 phase -> getParentFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.fragmentContainer, new PhaseEditFragment())
+                        .replace(
+                                R.id.fragmentContainer,
+                                new PhaseEditFragment()
+                        )
                         .addToBackStack(null)
                         .commit()
         );
-        phaseRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        phaseRecyclerView.setLayoutManager(
+                new LinearLayoutManager(requireContext())
+        );
         phaseRecyclerView.setAdapter(phaseListAdapter);
 
-        //Setup Day Selection
-        setupDayButtons(view);
+        // Setup Day Selection
+        setupDayButtons(view, scheduleEditVm);
 
-        //Setup Looping Toggle
-        view.findViewById(R.id.repeatButton).setOnClickListener(v ->{
-                Toast.makeText(requireContext(), "Repeat pressed", Toast.LENGTH_SHORT).show();
-                scheduleEditVm.updateAlarm(builder ->
-                        builder.setIsRecurring(!builder.getIsRecurring()));
+        // Setup Looping Toggle
+        ((MaterialButton)view.findViewById(R.id.repeatButton)).setChecked(scheduleEditVm.getDraftAlarm().getIsRecurring());
+        view.findViewById(R.id.repeatButton).setOnClickListener(v -> {
+            scheduleEditVm.updateAlarm(builder ->
+                    builder.setIsRecurring(!builder.getIsRecurring())
+            );
+        });
 
-                }
-        );
+        // Setup Alarm Toggle
+        ((MaterialButton)view.findViewById(R.id.toggleScheduleButton)).setChecked(scheduleEditVm.getDraftAlarm().getIsEnabled());
+        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v -> {
+            scheduleEditVm.updateAlarm(builder ->
+                    builder.setIsEnabled(!builder.getIsEnabled())
+            );
+        });
 
-        //Setup Alarm Toggle
-        view.findViewById(R.id.toggleScheduleButton).setOnClickListener(v ->{
-                Toast.makeText(requireContext(), "Schedule toggled", Toast.LENGTH_SHORT).show();
-                scheduleEditVm.updateAlarm(builder ->
-                        builder.setIsEnabled(!builder.getIsEnabled()));
-                }
-        );
-
-        //Setup Add Phase Button
+        // Setup Add Phase Button
+        //TODO
         view.findViewById(R.id.addPhaseButton).setOnClickListener(v -> {
-                Toast.makeText(requireContext(), "Add phase clicked", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                    requireContext(),
+                    "Add phase clicked",
+                    Toast.LENGTH_SHORT
+            ).show();
+        });
 
-                }
-        );
+        // Setup Name field
+        EditText nameInput = view.findViewById(R.id.scheduleNameInput);
+        nameInput.setText(scheduleEditVm.getDraftAlarm().getLabel());
+        nameInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text,int start,int count,int after) {}
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count
+            ) {
+                scheduleEditVm.updateAlarm(builder ->
+                        builder.setLabel(text.toString())
+                );
+            }
+            @Override
+            public void afterTextChanged(Editable editable) {}
+        });
+
+        //Confirm Alarm Changes
+        view.findViewById(R.id.confirmButton).setOnClickListener(v-> {
+            Toast.makeText(
+                    requireContext(),
+                    "Confirm clicked",
+                    Toast.LENGTH_SHORT
+            ).show();
+            scheduleEditVm.saveAlarm();
+            leaveScheduleEditor();
+        });
+
+        //Cancel Alarm Changes
+        view.findViewById(R.id.cancelButton).setOnClickListener(v-> {
+            showCancelConfirmation();
+        });
+
+        // Handle Android system Back button / gesture
+        OnBackPressedCallback backCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                showCancelConfirmation();
+            }
+        };
+        requireActivity()
+                .getOnBackPressedDispatcher()
+                .addCallback(getViewLifecycleOwner(), backCallback);
     }
 
-    //TODO link to builder
-    private void setupDayButtons(View view) {
+    private void setupDayButtons(View view, ScheduleEditViewModel scheduleEditVm) {
         int[] dayButtonIds = {
                 R.id.mondayButton,
                 R.id.tuesdayButton,
@@ -139,9 +204,59 @@ public class ScheduleEditFragment extends Fragment {
                 R.id.sundayButton
         };
 
-        for (int id : dayButtonIds) {
-            ToggleButton button = view.findViewById(id);
-            button.setChecked(true);
+        DayOfWeek[] days = {
+                DayOfWeek.MONDAY,
+                DayOfWeek.TUESDAY,
+                DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY,
+                DayOfWeek.FRIDAY,
+                DayOfWeek.SATURDAY,
+                DayOfWeek.SUNDAY
+        };
+
+        for (int i = 0; i < dayButtonIds.length; i++) {
+            ToggleButton button = view.findViewById(dayButtonIds[i]);
+            DayOfWeek day = days[i];
+
+            //Setup Loaded buttons
+            button.setChecked(
+                    scheduleEditVm.getDraftAlarm()
+                            .getDaysList()
+                            .contains(day)
+            );
+
+            //Setup Listener
+            button.setOnClickListener(v ->
+                    scheduleEditVm.updateAlarm(builder -> {
+                        List<DayOfWeek> selectedDays =
+                                new ArrayList<>(builder.getDaysList());
+
+                        if (button.isChecked()) {
+                            if (!selectedDays.contains(day)) {
+                                selectedDays.add(day);
+                            }
+                        } else {
+                            selectedDays.remove(day);
+                        }
+
+                        builder.clearDays();
+                        builder.addAllDays(selectedDays);
+                    })
+            );
         }
+    }
+
+    private void showCancelConfirmation() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Discard changes?")
+                .setMessage("Any changes you have made will be lost.")
+                .setNegativeButton("Keep editing", null)
+                .setPositiveButton("Discard", (dialog, which) ->
+                        leaveScheduleEditor()
+                )
+                .show();
+    }
+    private void leaveScheduleEditor() {
+        getParentFragmentManager().popBackStack();
     }
 }

@@ -9,19 +9,21 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarm.ui.util.TimeFormatUtils;
+import com.karstonn.alarmsystem.proto.AlarmPhase;
 
 import java.util.List;
 
 public class PhaseListAdapter extends RecyclerView.Adapter<PhaseListAdapter.PhaseViewHolder> {
 
     public interface OnPhaseClickListener {
-        void onPhaseClick(DebugPhaseItem phase);
+        void onPhaseClick(AlarmPhase phase);
     }
 
-    private final List<DebugPhaseItem> phases;
+    private final List<AlarmPhase> phases;
     private final OnPhaseClickListener clickListener;
 
-    public PhaseListAdapter(List<DebugPhaseItem> phases, OnPhaseClickListener clickListener) {
+    public PhaseListAdapter(List<AlarmPhase> phases, OnPhaseClickListener clickListener) {
         this.phases = phases;
         this.clickListener = clickListener;
     }
@@ -37,10 +39,10 @@ public class PhaseListAdapter extends RecyclerView.Adapter<PhaseListAdapter.Phas
 
     @Override
     public void onBindViewHolder(@NonNull PhaseViewHolder holder, int position) {
-        DebugPhaseItem phase = phases.get(position);
+        AlarmPhase phase = phases.get(position);
 
-        holder.phaseTimeText.setText(phase.getTimeText());
-        holder.phaseNameText.setText(phase.getName());
+        holder.phaseTimeText.setText(TimeFormatUtils.formatTimeOfDay(phase.getTriggerTime()));
+        holder.phaseNameText.setText(phase.getLabel());
 
         holder.itemView.setOnClickListener(v -> clickListener.onPhaseClick(phase));
     }

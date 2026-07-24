@@ -1,8 +1,11 @@
 package com.karstonn.alarm.ui.scheduleEdit;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 
+import com.karstonn.alarm.AlarmRepo;
 import com.karstonn.alarmsystem.proto.Alarm;
+import com.karstonn.alarmsystem.proto.UpdateAlarmRequest;
 
 import java.sql.Struct;
 import java.util.function.Consumer;
@@ -10,9 +13,18 @@ import java.util.function.Consumer;
 
 public class ScheduleEditViewModel extends ViewModel {
     private Alarm.Builder draftAlarm;
+    private AlarmRepo repo;
     private boolean hasUnsavedChanges;
 
+    public void setAlarmRepo(
+            @NonNull AlarmRepo repo
+    ) {
+        this.repo = repo;
+    }
     public void loadAlarm(Alarm alarm) {
+        if (alarm == null){
+            throw new IllegalArgumentException("Alarm cannot be null");
+        }
         draftAlarm = alarm.toBuilder();
         hasUnsavedChanges = false;
     }
@@ -26,6 +38,17 @@ public class ScheduleEditViewModel extends ViewModel {
     public Alarm getDraftAlarm() {
         requireDraft();
         return draftAlarm.build();
+    }
+
+    public void saveAlarm(){
+        requireDraft();
+        requireRepo();
+        if (hasUnsavedChanges){
+          repo.updateAlarm(UpdateAlarmRequest.newBuilder()
+                  .setId(draftAlarm.getId())
+                  .setAlarm(draftAlarm).build());
+          hasUnsavedChanges = false;
+        }
     }
 
     public boolean hasDraftAlarm(){
@@ -42,7 +65,12 @@ public class ScheduleEditViewModel extends ViewModel {
 
     private void requireDraft (){
         if (draftAlarm == null) {
-            throw new IllegalStateException("No phase has been loaded");
+            throw new IllegalStateException("No alarm has been loaded");
+        }
+    }
+    private void requireRepo (){
+        if (repo == null) {
+            throw new IllegalStateException("No repo has been loaded for ScheduleEditVm");
         }
     }
 }
