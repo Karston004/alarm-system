@@ -26,10 +26,12 @@ import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.phaseEdit.PhaseEditFragment;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
+import com.karstonn.alarmsystem.proto.AlarmPhaseId;
 import com.karstonn.alarmsystem.proto.DayOfWeek;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class ScheduleEditFragment extends Fragment {
 
@@ -65,7 +67,7 @@ public class ScheduleEditFragment extends Fragment {
 
         Bundle args = getArguments();
 
-        scheduleEditVm = new ViewModelProvider(this)
+        scheduleEditVm = new ViewModelProvider(requireActivity())
                 .get(ScheduleEditViewModel.class);
         AlarmApplication application = (AlarmApplication) requireActivity().getApplication();
         scheduleEditVm.setAlarmRepo(application.getAlarmRepo());
@@ -108,7 +110,7 @@ public class ScheduleEditFragment extends Fragment {
                         .beginTransaction()
                         .replace(
                                 R.id.fragmentContainer,
-                                new PhaseEditFragment()
+                                PhaseEditFragment.newInstance(phase.getPhaseId())
                         )
                         .addToBackStack(null)
                         .commit()
@@ -135,14 +137,13 @@ public class ScheduleEditFragment extends Fragment {
         ));
 
         // Setup Add Phase Button
-        //TODO
-        view.findViewById(R.id.addPhaseButton).setOnClickListener(v -> {
-            Toast.makeText(
-                    requireContext(),
-                    "Add phase clicked",
-                    Toast.LENGTH_SHORT
-            ).show();
-        });
+        view.findViewById(R.id.addPhaseButton).setOnClickListener(v ->
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, PhaseEditFragment.newInstance(onNewPhase()))
+                    .addToBackStack(null)
+                    .commit()
+        );
 
         // Setup Name field
         EditText nameInput = view.findViewById(R.id.scheduleNameInput);
@@ -268,6 +269,34 @@ public class ScheduleEditFragment extends Fragment {
                         }
                 )
                 .show();
+    }
+
+    private AlarmPhaseId onNewPhase() {
+        String newPhaseId;
+        do {
+            newPhaseId = UUID.randomUUID().toString();
+        } while (phaseIdExists(newPhaseId));
+
+        AlarmPhase newPhase = AlarmPhase.newBuilder()
+                .setLabel("new phase")
+                .setPhaseId(AlarmPhaseId.newBuilder()
+                        .setAlarmId(scheduleEditVm.getDraftAlarm().getId())
+                        .setPhaseId(newPhaseId)
+                        .build())
+                .build();
+        scheduleEditVm.updateAlarm(builder ->
+            builder.addAlarmPhases(newPhase));
+        return newPhase.getPhaseId();
+    }
+
+    private boolean phaseIdExists(String phaseId) {
+        for (AlarmPhase phase : scheduleEditVm.getDraftAlarm().getAlarmPhasesList()) {
+            if (phase.getPhaseId().getPhaseId().equals(phaseId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
     private void leaveScheduleEditor() {
         getParentFragmentManager().popBackStack();

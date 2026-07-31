@@ -2,7 +2,6 @@ package com.karstonn.alarm.ui.phaseEdit;
 
 import androidx.lifecycle.ViewModel;
 
-import com.karstonn.alarmsystem.proto.Action;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
 
 import java.util.function.Consumer;
@@ -39,4 +38,5 @@ public class PhaseEditViewModel extends ViewModel {
             throw new IllegalStateException("No phase has been loaded");
         }
     }
+
 }
