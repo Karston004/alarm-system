@@ -88,7 +88,7 @@ message AlarmPhaseId {
 }
 
 message AlarmPhase{
-  string phase_id = 1;
+  AlarmPhaseId phase_id = 1;
   TimeOfDay trigger_time = 2;
   string label = 3;
   repeated Action actions = 4;
