@@ -27,7 +27,6 @@ import com.karstonn.alarmsystem.proto.AlarmPhase;
 import com.karstonn.alarmsystem.proto.AlarmPhaseId;
 import com.karstonn.alarmsystem.proto.TimeOfDay;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -56,6 +55,41 @@ public class PhaseEditFragment extends Fragment {
         return fragment;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        scheduleEditVm = new ViewModelProvider(requireActivity())
+                .get(ScheduleEditViewModel.class);
+
+        phaseEditVm = new ViewModelProvider(requireActivity())
+                .get(PhaseEditViewModel.class);
+
+        boolean openingNewPhase = savedInstanceState == null;
+        boolean phaseVmWasRecreated = !phaseEditVm.hasDraftPhase();
+
+        if (openingNewPhase || phaseVmWasRecreated) {
+            String phaseId;
+
+            try {
+                byte[] bytes = requireArguments()
+                        .getByteArray(ARG_PHASE_ID_BYTES);
+
+                phaseId = AlarmPhaseId.parseFrom(bytes).getPhaseId();
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Failed to parse phase ID",
+                        e
+                );
+            }
+
+            int index = findPhaseIndex(phaseId);
+            phaseEditVm.loadPhase(
+                    scheduleEditVm.getDraftAlarm().getAlarmPhases(index)
+            );
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(
@@ -78,21 +112,7 @@ public class PhaseEditFragment extends Fragment {
         phaseEditVm = new ViewModelProvider(requireActivity())
                 .get(PhaseEditViewModel.class);
 
-
-
         actionRecyclerView = view.findViewById(R.id.actionRecyclerView);
-        Bundle args = getArguments();
-
-        if (args != null && args.containsKey(ARG_PHASE_ID_BYTES)) {
-            String phaseId;
-            try {
-               phaseId = AlarmPhaseId.parseFrom(args.getByteArray(ARG_PHASE_ID_BYTES)).getPhaseId();
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse phase from arguments", e);
-            }
-            int index = findPhaseIndex(phaseId);
-            phaseEditVm.loadPhase(scheduleEditVm.getDraftAlarm().getAlarmPhases(index));
-        }
         List<Action> actions = phaseEditVm.getDraftPhase().getActionsList();
 
         actionListAdapter = new ActionListAdapter(

@@ -65,19 +65,36 @@ public class ScheduleEditFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Bundle args = getArguments();
-
         scheduleEditVm = new ViewModelProvider(requireActivity())
                 .get(ScheduleEditViewModel.class);
-        AlarmApplication application = (AlarmApplication) requireActivity().getApplication();
+
+        AlarmApplication application =
+                (AlarmApplication) requireActivity().getApplication();
         scheduleEditVm.setAlarmRepo(application.getAlarmRepo());
 
-        if (args != null && args.containsKey(ARG_ALARM_BYTES)) {
-            try {
-                scheduleEditVm.loadAlarm(Alarm.parseFrom(args.getByteArray(ARG_ALARM_BYTES)));
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse Alarm from arguments", e);
-            }
+        boolean openingNewEditor = savedInstanceState == null;
+        boolean viewModelWasRecreated = !scheduleEditVm.hasDraftAlarm();
+
+        if (openingNewEditor || viewModelWasRecreated) {
+            loadAlarmFromArguments();
+        }
+    }
+
+    private void loadAlarmFromArguments() {
+        Bundle args = requireArguments();
+
+        try {
+            Alarm alarm = Alarm.parseFrom(
+                    args.getByteArray(ARG_ALARM_BYTES)
+            );
+
+            // This still deliberately overrides the current draft.
+            scheduleEditVm.loadAlarm(alarm);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Failed to parse Alarm from arguments",
+                    e
+            );
         }
     }
 
@@ -177,10 +194,7 @@ public class ScheduleEditFragment extends Fragment {
         view.findViewById(R.id.cancelButton).setOnClickListener(v-> showCancelConfirmation());
 
         //Delete Alarm
-        view.findViewById(R.id.deleteButton).setOnClickListener(v -> {
-            scheduleEditVm.deleteAlarm();
-            showDeleteConfirmation();
-        });
+        view.findViewById(R.id.deleteButton).setOnClickListener(v -> showDeleteConfirmation());
 
         // Handle Android system Back button / gesture
         OnBackPressedCallback backCallback = new OnBackPressedCallback(true) {
