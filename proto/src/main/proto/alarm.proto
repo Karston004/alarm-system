@@ -191,16 +191,30 @@ service AlarmRunTimeService {
 // --------- Device Types ---------
 // THIS MUST BE MANUALLY LINKED WITH ActionValue!!
 // no trick in protobuf to do this :(
-enum ActionValueType {
-  PARAMETER_TYPE_UNSPECIFIED = 0;
-  PARAMETER_TYPE_STRING = 1;
-  PARAMETER_TYPE_UINT32 = 2;
-  PARAMETER_TYPE_INT32 = 3;
-  PARAMETER_TYPE_BOOL = 4;
-  PARAMETER_TYPE_RGBA = 5;
-  PARAMETER_TYPE_PERCENTAGE = 6;
-  PARAMETER_TYPE_FILE = 7;
-  PARAMETER_TYPE_DOUBLE = 8;
+
+message StringRequirement{
+  uint32 minLength = 1;
+  uint32 maxLength = 2;
+  bool AsciiOnly = 3;
+}
+message UINT32Requirement{
+  uint32 minVal = 1;
+  uint32 maxVal = 2;
+}
+message INT32Requirement{
+  int32 minVal = 1;
+  int32 maxVal = 2;
+}
+message BoolRequirement{}
+message RGBARequirement{}
+message PercentageRequirement{}
+message FileRequirement{
+  int32 maxSize = 1;
+  string fileType = 2;
+}
+message DoubleRequirement{
+  double minVal = 1;
+  double maxVal = 2;
 }
 
 message DeviceId {
@@ -214,7 +228,19 @@ message DeviceCapabilityKey {
 message ParameterRequirement {
   string key = 1;
   string label = 2;
-  ActionValueType type = 3;
+
+  // THIS MUST BE MANUALLY LINKED WITH ActionValue!!
+  // no trick in protobuf to do this :(
+  oneof requirement {
+    StringRequirement string_requirement = 11;
+    UINT32Requirement uint32_requirement = 12;
+    INT32Requirement int32_requirement = 13;
+    BoolRequirement bool_requirement = 14;
+    RGBARequirement rgba_requirement = 15;
+    PercentageRequirement percentage_requirement = 16;
+    FileRequirement file_requirement = 17;
+    DoubleRequirement double_requirement = 18;
+  }
 }
 
 message DeviceCapability {
