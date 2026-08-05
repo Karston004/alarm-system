@@ -9,26 +9,34 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.karstonn.alarm.R;
+import com.karstonn.alarmsystem.proto.Action;
 
 import java.util.List;
 
-public class ActionListAdapter extends RecyclerView.Adapter<ActionListAdapter.ActionViewHolder> {
+public class ActionListAdapter
+        extends RecyclerView.Adapter<ActionListAdapter.ActionViewHolder> {
 
     public interface OnActionClickListener {
-        void onActionClick(DebugActionItem action);
+        void onActionClick(int actionIndex);
     }
 
-    private final List<DebugActionItem> actions;
+    private final List<Action> actions;
     private final OnActionClickListener clickListener;
 
-    public ActionListAdapter(List<DebugActionItem> actions, OnActionClickListener clickListener) {
+    public ActionListAdapter(
+            List<Action> actions,
+            OnActionClickListener clickListener
+    ) {
         this.actions = actions;
         this.clickListener = clickListener;
     }
 
     @NonNull
     @Override
-    public ActionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ActionViewHolder onCreateViewHolder(
+            @NonNull ViewGroup parent,
+            int viewType
+    ) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_action, parent, false);
 
@@ -36,12 +44,21 @@ public class ActionListAdapter extends RecyclerView.Adapter<ActionListAdapter.Ac
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ActionViewHolder holder, int position) {
-        DebugActionItem action = actions.get(position);
+    public void onBindViewHolder(
+            @NonNull ActionViewHolder holder,
+            int position
+    ) {
+        Action action = actions.get(position);
 
-        holder.actionNameText.setText(action.getName());
+        holder.actionNameText.setText(action.getLabel());
 
-        holder.itemView.setOnClickListener(v -> clickListener.onActionClick(action));
+        holder.itemView.setOnClickListener(v -> {
+            int clickedPosition = holder.getBindingAdapterPosition();
+
+            if (clickedPosition != RecyclerView.NO_POSITION) {
+                clickListener.onActionClick(clickedPosition);
+            }
+        });
     }
 
     @Override
@@ -49,12 +66,15 @@ public class ActionListAdapter extends RecyclerView.Adapter<ActionListAdapter.Ac
         return actions.size();
     }
 
-    static public class ActionViewHolder extends RecyclerView.ViewHolder {
+    public static class ActionViewHolder extends RecyclerView.ViewHolder {
         private final TextView actionNameText;
 
         public ActionViewHolder(@NonNull View itemView) {
             super(itemView);
-            actionNameText = itemView.findViewById(R.id.actionNameText);
+
+            actionNameText = itemView.findViewById(
+                    R.id.actionNameText
+            );
         }
     }
 }
