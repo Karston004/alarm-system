@@ -29,6 +29,7 @@ import com.karstonn.alarmsystem.proto.TimeOfDay;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 public class PhaseEditFragment extends Fragment {
     private static final String ARG_PHASE_ID_BYTES = "phase_id_bytes";
@@ -115,6 +116,7 @@ public class PhaseEditFragment extends Fragment {
         actionRecyclerView = view.findViewById(R.id.actionRecyclerView);
         List<Action> actions = phaseEditVm.getDraftPhase().getActionsList();
 
+        //TODO - Link to action edit
         actionListAdapter = new ActionListAdapter(
                 actions,
                 actionIndex -> getParentFragmentManager()
@@ -162,6 +164,16 @@ public class PhaseEditFragment extends Fragment {
         // Delete Button
         view.findViewById(R.id.deletePhaseButton).setOnClickListener(v -> showDeleteConfirmation());
 
+        //TODO
+        //Add ActionButton
+        view.findViewById(R.id.addActionButton).setOnClickListener(v -> {
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, ActionEditFragment.newInstance(onNewAction()))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         //Setup name field
         EditText nameInput = view.findViewById(R.id.phaseNameInput);
         nameInput.setText(phaseEditVm.getDraftPhase().getLabel());
@@ -179,6 +191,47 @@ public class PhaseEditFragment extends Fragment {
             public void afterTextChanged(Editable editable) {}
         });
 
+    }
+
+    private int onNewAction(){
+        String newActionId;
+        do {
+            newActionId = UUID.randomUUID().toString();
+        } while (actionIdExists(newActionId));
+
+        //Create new action
+        Action newAction = Action.newBuilder()
+                .setLabel("New Action")
+                .setId(newActionId)
+                .build();
+
+        phaseEditVm.updatePhase(builder ->
+                builder.addActions(newAction));
+        return findActionIndex(newActionId);
+    }
+    private int findActionIndex(String actionId) {
+        AlarmPhase draftPhase = phaseEditVm.getDraftPhase();
+        for (int i = 0; i < draftPhase.getActionsCount(); i++) {
+            Action action = draftPhase.getActions(i);
+
+            if (action.getId().equals(actionId)) {
+                return i;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "No action found with ID: " + actionId
+        );
+    }
+
+    private boolean actionIdExists(String id) {
+        for (Action action : phaseEditVm.getDraftPhase().getActionsList()) {
+            if (action.getId().equals(id)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private int findPhaseIndex(String phaseId) {
