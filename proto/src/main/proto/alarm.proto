@@ -245,12 +245,14 @@ message ParameterRequirement {
 
 message DeviceCapability {
   DeviceCapabilityKey key = 1;
-  repeated ParameterRequirement parameter_requirements = 2;
+  string label = 2;
+  repeated ParameterRequirement parameter_requirements = 3;
 }
 
 message Device {
-  DeviceId device_id= 1;
-  repeated DeviceCapability capabilities = 2;
+  DeviceId device_id = 1;
+  string label = 2;
+  repeated DeviceCapability capabilities = 3;
 }
 
 // --------- Device Register Service Request/Response ---------
