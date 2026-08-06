@@ -3,14 +3,17 @@ package com.karstonn.alarm;
 import android.app.Application;
 
 public class AlarmApplication extends Application {
-    private AlarmRepo repo;
+    private AlarmRepo alarmRepo;
+    private DeviceRepo deviceRepo;
     @Override
     public void onCreate() {
         super.onCreate();
 
-        this.repo = new InMemoryAlarmRepo();
+        this.alarmRepo = new InMemoryAlarmRepo();
+        this.deviceRepo = new DebugDeviceRepo();
     }
     public AlarmRepo getAlarmRepo(){
-        return repo;
+        return alarmRepo;
     }
+    public DeviceRepo getDeviceRepo(){return deviceRepo;}
 }
