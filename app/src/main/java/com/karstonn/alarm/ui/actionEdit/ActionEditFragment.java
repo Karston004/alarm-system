@@ -1,6 +1,8 @@
 package com.karstonn.alarm.ui.actionEdit;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -22,8 +24,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
+import com.google.android.material.slider.Slider;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+
 import com.karstonn.alarm.AlarmApplication;
 import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.phaseEdit.PhaseEditViewModel;
@@ -479,15 +485,24 @@ public class ActionEditFragment extends Fragment {
                 return;
 
             case BOOL_REQUIREMENT:
-                // TODO: Add a checkbox or switch.
+                addToggleSwitch(
+                        parameterRequirement,
+                        actionEditVm.getDraftAction().getParameters(parameterIndex).getValue().getBoolVal()
+                );
                 return;
 
             case RGBA_REQUIREMENT:
-                // TODO: Add a colour input.
+                addRgbaInput(
+                        parameterRequirement,
+                        actionEditVm.getDraftAction().getParameters(parameterIndex).getValue().getRgbaVal()
+                );
                 return;
 
             case PERCENTAGE_REQUIREMENT:
-                // TODO: Add a percentage input.
+                addPercentageInput(
+                        parameterRequirement,
+                        actionEditVm.getDraftAction().getParameters(parameterIndex).getValue().getPercentage()
+                );
                 return;
 
             case FILE_REQUIREMENT:
@@ -535,8 +550,8 @@ public class ActionEditFragment extends Fragment {
                 );
 
         //TODO: set margin
-        int margin = (8);
-        layoutParams.setMargins(0, margin, 0, margin);
+        int margin = (dpToPx(8));
+        layoutParams.setMargins(10, margin, 10, margin);
 
         parameterContainer.addView(inputLayout, layoutParams);
 
@@ -611,14 +626,7 @@ public class ActionEditFragment extends Fragment {
 
             if (validInput){
                 inputLayout.setError(null);
-
-                int index = actionEditVm.findParameterIndexByKey(requirement.getKey());
-                ActionParameter.Builder parameterBuilder = ActionParameter.newBuilder(actionEditVm.getDraftAction().getParameters(index));
-
-                parameterBuilder.setValue(valueBuilder.build());
-                actionEditVm.updateAction(builder -> {
-                    builder.setParameters(index, parameterBuilder.build());
-                });
+                updateParameter(requirement, valueBuilder.build());
             } else {
                 inputLayout.setError("Invalid: not in range of accepted values");
             }
@@ -626,7 +634,304 @@ public class ActionEditFragment extends Fragment {
             inputLayout.setError("Invalid " + requirement.getLabel());
         }
     }
+    private void addToggleSwitch(
+            ParameterRequirement requirement,
+            boolean startingVal
+    ){
+        MaterialSwitch input = new MaterialSwitch(requireContext());
 
+        input.setText(requirement.getLabel());
+        input.setChecked(startingVal);
+
+        input.setOnCheckedChangeListener((button, isChecked) -> {
+            ActionValue value = ActionValue.newBuilder()
+                    .setBoolVal(isChecked)
+                    .build();
+
+            updateParameter(requirement, value);
+        });
+
+        parameterContainer.addView(
+                input,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+        );
+    }
+    private void addPercentageInput(
+            ParameterRequirement requirement,
+            Percentage percentage
+    ) {
+        int initialPercentage = percentage.getValue();
+        LinearLayout group = createVerticalGroup();
+
+        TextView label = new TextView(requireContext());
+
+        label.setText(
+                requirement.getLabel()
+                        + ": "
+                        + initialPercentage
+                        + "%"
+        );
+
+        Slider slider = new Slider(requireContext());
+        int minVal = requirement.getPercentageRequirement().getMinVal();
+        int maxVal = requirement.getPercentageRequirement().getMaxVal();
+        slider.setValueFrom(minVal);
+        slider.setValueTo(maxVal);
+        slider.setStepSize(requirement.getPercentageRequirement().getStep());
+        slider.setValue(initialPercentage);
+
+        slider.setLabelFormatter(value ->
+                value + "%"
+        );
+
+        slider.addOnChangeListener((changedSlider, value, fromUser) -> {
+            label.setText(
+                    requirement.getLabel()
+                            + ": "
+                            + Math.round(value)
+            );
+
+            if (!fromUser) {
+                return;
+            }
+
+            ActionValue actionValue = ActionValue.newBuilder()
+                    .setPercentage(
+                            Percentage.newBuilder()
+                                    .setValue(Math.round(value))
+                                    .build()
+                    )
+                    .build();
+
+            updateParameter(requirement, actionValue);
+        });
+
+        group.addView(label);
+        group.addView(slider);
+
+        parameterContainer.addView(
+                group,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+        );
+    }
+    private void addRgbaInput(
+            ParameterRequirement requirement,
+            RGBA rgba
+    ) {
+        LinearLayout group = createVerticalGroup();
+
+        TextView label = new TextView(requireContext());
+        label.setText(requirement.getLabel());
+
+        View colourPreview = new View(requireContext());
+
+        LinearLayout.LayoutParams previewParams =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dpToPx(56)
+                );
+
+        previewParams.topMargin = dpToPx(6);
+        colourPreview.setLayoutParams(previewParams);
+
+        int initialRgba = rgba.getRgba();
+
+        // Give the preview rounded corners + outline
+        setColourPreview(
+                colourPreview,
+                initialRgba
+        );
+
+        // Store the CURRENT colour in the view itself.
+        // This means reopening the picker uses the last selected colour.
+        colourPreview.setTag(initialRgba);
+
+        colourPreview.setOnClickListener(v -> {
+            int currentRgba = (int) colourPreview.getTag();
+
+            showColourPicker(
+                    requirement,
+                    currentRgba,
+                    colourPreview
+            );
+        });
+
+        group.addView(label);
+        group.addView(colourPreview);
+
+        LinearLayout.LayoutParams groupParams =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        groupParams.setMargins(
+                0,
+                dpToPx(8),
+                0,
+                dpToPx(8)
+        );
+
+        parameterContainer.addView(
+                group,
+                groupParams
+        );
+    }
+    private void setColourPreview(
+            View preview,
+            int rgba
+    ) {
+        GradientDrawable drawable =
+                new GradientDrawable();
+
+        drawable.setShape(
+                GradientDrawable.RECTANGLE
+        );
+
+        drawable.setColor(
+                rgbaToAndroidColor(rgba)
+        );
+
+        drawable.setCornerRadius(
+                dpToPx(10)
+        );
+
+        drawable.setStroke(
+                dpToPx(1),
+                Color.GRAY
+        );
+
+        preview.setBackground(drawable);
+    }
+    private void showColourPicker(
+            ParameterRequirement requirement,
+            int initialRgba,
+            View colourPreview
+    ) {
+        ColorWheelView wheel =
+                new ColorWheelView(requireContext());
+
+        wheel.setColor(
+                rgbaToAndroidColor(initialRgba)
+        );
+
+        int size = dpToPx(280);
+
+        wheel.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        size,
+                        size
+                )
+        );
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(requirement.getLabel())
+                .setView(wheel)
+
+                .setNegativeButton(
+                        "Cancel",
+                        null
+                )
+
+                .setPositiveButton(
+                        "OK",
+                        (dialog, which) -> {
+
+                            int androidColour =
+                                    wheel.getColor();
+
+                            int rgba =
+                                    androidColorToRgba(
+                                            androidColour
+                                    );
+
+                            // Update visible swatch
+                            setColourPreview(
+                                    colourPreview,
+                                    rgba
+                            );
+
+                            // Remember the new colour
+                            colourPreview.setTag(rgba);
+
+                            // Update action
+                            ActionValue value =
+                                    ActionValue.newBuilder()
+                                            .setRgbaVal(
+                                                    RGBA.newBuilder()
+                                                            .setRgba(rgba)
+                                                            .build()
+                                            )
+                                            .build();
+
+                            updateParameter(
+                                    requirement,
+                                    value
+                            );
+                        }
+                )
+
+                .show();
+    }
+    private static int androidColorToRgba(int color) {
+        int a = Color.alpha(color);
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+
+        return ((r & 0xFF) << 24)
+                | ((g & 0xFF) << 16)
+                | ((b & 0xFF) << 8)
+                | (a & 0xFF);
+    }
+    private static int rgbaToAndroidColor(int rgba) {
+        int r = (rgba >>> 24) & 0xFF;
+        int g = (rgba >>> 16) & 0xFF;
+        int b = (rgba >>> 8) & 0xFF;
+        int a = rgba & 0xFF;
+
+        return Color.argb(a, r, g, b);
+    }
+    private void updateParameter(
+            ParameterRequirement requirement,
+            ActionValue value
+    ) {
+        int index = actionEditVm.findParameterIndexByKey(requirement.getKey());
+        ActionParameter.Builder parameterBuilder = ActionParameter.newBuilder(actionEditVm.getDraftAction().getParameters(index));
+        parameterBuilder.setValue(value);
+
+        actionEditVm.updateAction(builder ->
+            builder.setParameters(index, parameterBuilder.build())
+        );
+    }
+    private LinearLayout createVerticalGroup() {
+        LinearLayout group =
+                new LinearLayout(requireContext());
+
+        group.setOrientation(LinearLayout.VERTICAL);
+
+        group.setPadding(
+                0,
+                dpToPx(8),
+                0,
+                dpToPx(8)
+        );
+
+        return group;
+    }
+    private int dpToPx(int dp) {
+        return Math.round(
+                dp * getResources()
+                        .getDisplayMetrics()
+                        .density
+        );
+    }
     //--- Confirmation Popups ---
     private void showCancelConfirmation() {
         new AlertDialog.Builder(requireContext())
@@ -638,7 +943,6 @@ public class ActionEditFragment extends Fragment {
                 )
                 .show();
     }
-
     private void showDeleteConfirmation () {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Action?")
