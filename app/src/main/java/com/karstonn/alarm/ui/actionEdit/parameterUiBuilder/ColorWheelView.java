@@ -1,4 +1,4 @@
-package com.karstonn.alarm.ui.actionEdit;
+package com.karstonn.alarm.ui.actionEdit.parameterUiBuilder;
 
 import android.content.Context;
 import android.graphics.Bitmap;
