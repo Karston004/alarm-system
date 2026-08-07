@@ -206,8 +206,14 @@ message INT32Requirement{
   int32 maxVal = 2;
 }
 message BoolRequirement{}
-message RGBARequirement{}
-message PercentageRequirement{}
+message RGBARequirement{
+  bool usesAlpha = 1;
+}
+message PercentageRequirement{
+  uint32 minVal = 1;
+  uint32 maxVal = 2;
+  optional uint32 step = 3;
+}
 message FileRequirement{
   int32 maxSize = 1;
   string fileType = 2;
