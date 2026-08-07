@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5"
     android:orientation="vertical"
-    android:padding="24dp"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout
@@ -13,7 +14,7 @@
 
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:padding="0dp">
 
         <TextView
             android:id="@+id/phaseEditTitle"
@@ -22,7 +23,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="Phase"
-            android:textSize="24sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:textColor="@color/black"/>
     </LinearLayout>
@@ -62,9 +63,9 @@
         android:gravity="center"
         android:text="00:00"
         android:textColor="@android:color/black"
-        android:textSize="18sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        app:cornerRadius="12dp"
+        app:cornerRadius="24dp"
         app:icon="@drawable/ic_clock"
         app:iconGravity="textStart"
         app:iconPadding="12dp"
@@ -78,7 +79,8 @@
         android:layout_marginTop="12dp"
         android:layout_marginBottom="12dp"
         android:layout_weight="1"
-        android:background="@drawable/rounded_card">
+        android:background="@drawable/rounded_card"
+        android:padding="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -90,7 +92,7 @@
                 android:layout_height="56dp"
                 android:gravity="center"
                 android:text="Actions"
-                android:textSize="20sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <androidx.recyclerview.widget.RecyclerView
@@ -113,6 +115,8 @@
             android:layout_gravity="bottom|end"
             android:backgroundTint="@color/green"
             android:contentDescription="Add New Action"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="12dp"
             android:insetLeft="0dp"
             android:insetTop="0dp"
             android:insetRight="0dp"
