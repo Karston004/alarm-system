@@ -1,5 +1,6 @@
 package com.karstonn.alarm;
 
+import com.karstonn.alarmsystem.proto.BoolRequirement;
 import com.karstonn.alarmsystem.proto.Device;
 import com.karstonn.alarmsystem.proto.DeviceCapability;
 import com.karstonn.alarmsystem.proto.DeviceCapabilityKey;
@@ -10,6 +11,8 @@ import com.karstonn.alarmsystem.proto.DeviceRequestResponse;
 import com.karstonn.alarmsystem.proto.DoubleRequirement;
 import com.karstonn.alarmsystem.proto.INT32Requirement;
 import com.karstonn.alarmsystem.proto.ParameterRequirement;
+import com.karstonn.alarmsystem.proto.PercentageRequirement;
+import com.karstonn.alarmsystem.proto.RGBARequirement;
 import com.karstonn.alarmsystem.proto.StringRequirement;
 import com.karstonn.alarmsystem.proto.UINT32Requirement;
 import com.karstonn.alarmsystem.proto.UpdateDeviceRequest;
@@ -24,7 +27,7 @@ public class DebugDeviceRepo implements DeviceRepo{
     }
     private void populateDebugDevices(){
         devices.put("Debug Device: Numbers", createDebugNumberDevice());
-        devices.put("Debug Device: Text",    createDebugTextDevice());
+        devices.put("Debug Device: General",    createDebugTextDevice());
     }
     @Override
     public Device getDevice(DeviceId id) {
@@ -142,13 +145,13 @@ public class DebugDeviceRepo implements DeviceRepo{
         return Device.newBuilder()
                 .setDeviceId(
                         DeviceId.newBuilder()
-                                .setId("Debug Device: Text")
+                                .setId("Debug Device: General")
                                 .build()
                 )
-                .setLabel("Debug Device: Text")
+                .setLabel("Debug Device: General")
                 .addCapabilities(
                         DeviceCapability.newBuilder()
-                                .setLabel("Example 0")
+                                .setLabel("Example Text")
                                 .setKey(DeviceCapabilityKey.newBuilder().setKey("0"))
                                 .addParameterRequirements(
                                         ParameterRequirement.newBuilder()
@@ -176,7 +179,7 @@ public class DebugDeviceRepo implements DeviceRepo{
                 )
                 .addCapabilities(
                         DeviceCapability.newBuilder()
-                                .setLabel("Example 1")
+                                .setLabel("General")
                                 .setKey(DeviceCapabilityKey.newBuilder().setKey("1"))
                                 .addParameterRequirements(
                                         ParameterRequirement.newBuilder()
@@ -198,6 +201,35 @@ public class DebugDeviceRepo implements DeviceRepo{
                                                                 .setMinLength(0)
                                                                 .setMaxLength(Integer.MAX_VALUE)
                                                                 .build())
+                                                .build()
+                                )
+                                .addParameterRequirements(
+                                        ParameterRequirement.newBuilder()
+                                                .setLabel("Bool Toggle")
+                                                .setKey("0")
+                                                .setBoolRequirement(
+                                                        BoolRequirement.newBuilder()
+                                                                .build()
+                                                )
+                                                .build()
+                                )
+                                .addParameterRequirements(
+                                        ParameterRequirement.newBuilder()
+                                                .setLabel("Percentage")
+                                                .setKey("1")
+                                                .setPercentageRequirement(
+                                                        PercentageRequirement.newBuilder()
+                                                                .setMinVal(0)
+                                                                .setMaxVal(100)
+                                                                .setStep(1)
+                                                                .build())
+                                                .build()
+                                )
+                                .addParameterRequirements(
+                                        ParameterRequirement.newBuilder()
+                                                .setLabel("Colour Picker")
+                                                .setKey("5")
+                                                .setRgbaRequirement(RGBARequirement.newBuilder().build())
                                                 .build()
                                 )
                                 .build()
