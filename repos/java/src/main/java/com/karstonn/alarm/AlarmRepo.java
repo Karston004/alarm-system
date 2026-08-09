@@ -7,14 +7,16 @@ import com.karstonn.alarmsystem.proto.AlarmRequestResponse;
 import com.karstonn.alarmsystem.proto.UpdateAlarmRequest;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 public interface AlarmRepo {
-    Alarm getAlarm(AlarmId id);
+    CompletableFuture<Alarm> getAlarm(AlarmId id);
 
-    AlarmListResponse listAlarms();
+    CompletableFuture<AlarmListResponse> listAlarms();
 
-    AlarmRequestResponse addAlarm(Alarm alarm);
+    CompletableFuture<AlarmRequestResponse> addAlarm(Alarm alarm);
 
-    AlarmRequestResponse updateAlarm(UpdateAlarmRequest updateRequest);
+    CompletableFuture<AlarmRequestResponse> updateAlarm(UpdateAlarmRequest updateRequest);
 
-    AlarmRequestResponse removeAlarm(AlarmId id);
+    CompletableFuture<AlarmRequestResponse> removeAlarm(AlarmId id);
 }

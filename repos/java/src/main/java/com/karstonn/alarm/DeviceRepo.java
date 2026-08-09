@@ -7,10 +7,12 @@ import com.karstonn.alarmsystem.proto.DeviceListResponse;
 import com.karstonn.alarmsystem.proto.DeviceRequestResponse;
 import com.karstonn.alarmsystem.proto.UpdateDeviceRequest;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface DeviceRepo {
     Device getDevice(DeviceId id);
-    DeviceRequestResponse addDevice(Device device);
-    DeviceRequestResponse updateDevice(UpdateDeviceRequest updateRequest);
-    DeviceRequestResponse removeDevice(DeviceId id);
-    DeviceListResponse listDevices(DeviceListRequest listRequest);
+    CompletableFuture<DeviceRequestResponse> addDevice(Device device);
+    CompletableFuture<DeviceRequestResponse> updateDevice(UpdateDeviceRequest updateRequest);
+    CompletableFuture<DeviceRequestResponse> removeDevice(DeviceId id);
+    CompletableFuture<DeviceListResponse> listDevices(DeviceListRequest listRequest);
 }

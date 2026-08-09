@@ -24,7 +24,13 @@ public class ActionEditViewModel extends ViewModel {
     }
     public List<Device> fetchDevices(){
         requireRepo();
-        return deviceRepo.listDevices(DeviceListRequest.newBuilder().build()).getDevicesList();
+        //TODO - allow async UI
+        // Currently is a blocking method
+        try {
+            return deviceRepo.listDevices(DeviceListRequest.newBuilder().build()).get().getDevicesList();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
     public void loadAction(Action action) {
         draftAction = action.toBuilder();

@@ -28,13 +28,23 @@ public class ScheduleListViewModel extends ViewModel {
 
     public void fetchSchedulesFromRepo() {
         requireRepo(); //Can Throw
-        AlarmListResponse response = repo.listAlarms();
-        scheduleDisplayInfos.clear();
-        scheduleDisplayInfos.addAll(response.getAlarmsList());
+        //TODO allow for async
+        try {
+            AlarmListResponse response = repo.listAlarms().get();
+            scheduleDisplayInfos.clear();
+            scheduleDisplayInfos.addAll(response.getAlarmsList());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Alarm getAlarm(AlarmId alarmId){
-        return repo.getAlarm(alarmId);
+        //TODO allow for async
+        try {
+            return repo.getAlarm(alarmId).get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void requireRepo(){

@@ -19,6 +19,7 @@ import com.karstonn.alarmsystem.proto.UpdateDeviceRequest;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class DebugDeviceRepo implements DeviceRepo{
     private final Map<String, Device> devices = new HashMap<>();
@@ -35,32 +36,42 @@ public class DebugDeviceRepo implements DeviceRepo{
     }
 
     @Override
-    public DeviceRequestResponse addDevice(Device device) {
+    public CompletableFuture<DeviceRequestResponse> addDevice(Device device) {
         devices.put(device.getDeviceId().getId(), device);
-        return DeviceRequestResponse.newBuilder().setSuccess(true).build();
+        DeviceRequestResponse response = DeviceRequestResponse.newBuilder().setSuccess(true).build();
+        return CompletableFuture.completedFuture(response);
     }
 
     @Override
-    public DeviceRequestResponse updateDevice(UpdateDeviceRequest updateRequest) {
+    public CompletableFuture<DeviceRequestResponse> updateDevice(UpdateDeviceRequest updateRequest) {
+        DeviceRequestResponse response;
         if (devices.containsKey(updateRequest.getDevice().getDeviceId().getId())){
             devices.put(updateRequest.getDevice().getDeviceId().getId(), updateRequest.getDevice());
-            return DeviceRequestResponse.newBuilder().setSuccess(true).build();
+            response = DeviceRequestResponse.newBuilder().setSuccess(true).build();
+        } else {
+            response = DeviceRequestResponse.newBuilder().setSuccess(false).build();
         }
-        return DeviceRequestResponse.newBuilder().setSuccess(false).build();
+        return CompletableFuture.completedFuture(response);
     }
 
     @Override
-    public DeviceRequestResponse removeDevice(DeviceId id) {
+    public CompletableFuture<DeviceRequestResponse> removeDevice(DeviceId id) {
+        DeviceRequestResponse response;
         if (devices.containsKey(id.getId())){
             devices.remove(id.getId());
-            return DeviceRequestResponse.newBuilder().setSuccess(true).build();
+            response = DeviceRequestResponse.newBuilder().setSuccess(true).build();
+        } else {
+            response = DeviceRequestResponse.newBuilder().setSuccess(false).build();
         }
-        return DeviceRequestResponse.newBuilder().setSuccess(false).build();
+        return CompletableFuture.completedFuture(response);
+
     }
 
     @Override
-    public DeviceListResponse listDevices(DeviceListRequest listRequest) {
-        return DeviceListResponse.newBuilder().addAllDevices(devices.values()).build();
+    public CompletableFuture<DeviceListResponse> listDevices(DeviceListRequest listRequest) {
+        DeviceListResponse response;
+        response = DeviceListResponse.newBuilder().addAllDevices(devices.values()).build();
+        return CompletableFuture.completedFuture(response);
     }
     private Device createDebugNumberDevice(){
         return Device.newBuilder()
