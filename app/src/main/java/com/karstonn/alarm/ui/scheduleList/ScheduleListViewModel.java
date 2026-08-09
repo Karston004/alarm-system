@@ -39,6 +39,7 @@ public class ScheduleListViewModel extends ViewModel {
     }
 
     public Alarm getAlarm(AlarmId alarmId){
+        requireRepo();
         //TODO allow for async
         try {
             return repo.getAlarm(alarmId).get();

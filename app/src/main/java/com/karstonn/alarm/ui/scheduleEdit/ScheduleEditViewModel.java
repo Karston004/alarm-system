@@ -42,11 +42,16 @@ public class ScheduleEditViewModel extends ViewModel {
     public void saveAlarm(){
         requireDraft();
         requireRepo();
-        if (hasUnsavedChanges){
-          repo.updateAlarm(UpdateAlarmRequest.newBuilder()
-                  .setId(draftAlarm.getId())
-                  .setAlarm(draftAlarm).build());
-          hasUnsavedChanges = false;
+        try {
+            if (hasUnsavedChanges){
+              repo.updateAlarm(UpdateAlarmRequest.newBuilder()
+                      .setId(draftAlarm.getId())
+                      .setAlarm(draftAlarm).build())
+                      .get();
+              hasUnsavedChanges = false;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
