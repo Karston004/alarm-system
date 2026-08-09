@@ -9,7 +9,7 @@ public class AlarmApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        this.alarmRepo = new InMemoryAlarmRepo();
+        this.alarmRepo = new ProtoDataStoreRepo(this);
         this.deviceRepo = new DebugDeviceRepo();
     }
     public AlarmRepo getAlarmRepo(){

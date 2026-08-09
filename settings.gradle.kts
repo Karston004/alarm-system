@@ -23,3 +23,4 @@ rootProject.name = "Alarm"
 include(":app")
 include(":proto")
 include(":repos:java")
+include(":repos:android")

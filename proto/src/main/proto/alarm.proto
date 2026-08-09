@@ -289,3 +289,8 @@ service DeviceRegistryService{
   rpc RemoveDevice(DeviceId) returns (DeviceRequestResponse);
   rpc ListDevices(DeviceListRequest) returns (DeviceListResponse);
 }
+
+// --------- Storage ---------
+message AlarmStorage {
+  repeated Alarm alarms = 1;
+}
