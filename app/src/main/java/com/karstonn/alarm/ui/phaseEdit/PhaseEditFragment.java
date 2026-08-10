@@ -22,6 +22,7 @@ import com.karstonn.alarm.R;
 import com.karstonn.alarm.ui.actionEdit.ActionEditFragment;
 import com.karstonn.alarm.ui.scheduleEdit.ScheduleEditViewModel;
 import com.karstonn.alarmsystem.proto.Action;
+import com.karstonn.alarmsystem.proto.ActionId;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
 import com.karstonn.alarmsystem.proto.AlarmPhaseId;
@@ -202,7 +203,7 @@ public class PhaseEditFragment extends Fragment {
         //Create new action
         Action newAction = Action.newBuilder()
                 .setLabel("New Action")
-                .setId(newActionId)
+                .setId(ActionId.newBuilder().setActionId(newActionId).build())
                 .build();
 
         phaseEditVm.updatePhase(builder ->
@@ -214,7 +215,7 @@ public class PhaseEditFragment extends Fragment {
         for (int i = 0; i < draftPhase.getActionsCount(); i++) {
             Action action = draftPhase.getActions(i);
 
-            if (action.getId().equals(actionId)) {
+            if (action.getId().getActionId().equals(actionId)) {
                 return i;
             }
         }
@@ -226,7 +227,7 @@ public class PhaseEditFragment extends Fragment {
 
     private boolean actionIdExists(String id) {
         for (Action action : phaseEditVm.getDraftPhase().getActionsList()) {
-            if (action.getId().equals(id)) {
+            if (action.getId().getActionId().equals(id)) {
                 return true;
             }
         }

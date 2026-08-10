@@ -67,10 +67,15 @@ message ActionParameter {
 
 // -- Action Wrapper --
 
+message ActionId {
+  AlarmPhaseId phase_id = 1;
+  string action_id = 2;
+}
+
 message Action {
-  string id = 1;
+  ActionId id = 1;
   string label = 2;
-  DeviceId device_id = 3;
+  DeviceId deviceId = 3;
   //Specify action type on device
   //(i.e. one device may have multiple possible actions)
   DeviceCapabilityKey device_action_key = 4;
@@ -79,12 +84,11 @@ message Action {
 
 // -- Alarm Structure --
 message AlarmId {
-  string id = 1;
+  string Alarm_id = 1;
 }
 
 message AlarmPhaseId {
-  AlarmId alarm_id = 1;
-  string phase_id = 2;
+  string phase_id = 1;
 }
 
 message AlarmPhase{
@@ -138,54 +142,38 @@ service AlarmRepoService {
   rpc ListAlarms(AlarmListRequest) returns (AlarmListResponse);
 }
 
-// --------- Action Execution Service Request/Response ---------
-
-message ActionExecutionRequest{
-  AlarmPhaseId alarm_phase_id = 1;
-  repeated Action actions = 2;
+// --------- Controller ---------
+// Controllers are responsible to execute device action
+// But devices are independent - the controller responsible can be swapped
+message ControllerId {
+  string id = 1;
 }
 
-message ActionExecutionResult{
-  string action_id = 1;
-  bool success = 2;
-  string message = 3;
+message Controller {
+  ControllerId controller_id = 1;
+  string label = 2;
 }
 
-message ActionExecutionsResponse{
-  AlarmPhaseId alarm_phase_id = 1;
-  repeated ActionExecutionResult results = 2;
+// --------- Controller Repo Service Request/Response ---------
+
+message GetControllerRequest {
+  ControllerId controller_id =1;
+}
+message AddControllerRequest {
+  Controller controller = 1;
 }
 
-// --------- Action Execution Service ---------
-
-service ExecutionService {
-  rpc TriggerAlarmActions(ActionExecutionRequest) returns (ActionExecutionsResponse);
+message UpdateController {
+  Controller controller = 1;
 }
 
-// --------- External Controller Service Request/Response ---------
-
-message SnoozeRequest {
-  AlarmPhaseId alarm_phase_id = 1;
-  uint32 snooze_mins = 2;
-  DeviceId device_id = 3;
-}
-message SnoozeResponse {
-  bool success = 1;
+message RemoveControllerRequest {
+  ControllerId controller_id = 1;
 }
 
-message DismissRequest {
-  AlarmPhaseId alarm_phase_id = 1;
-  DeviceId device_id = 2;
-}
-message DismissResponse {
-  bool success = 1;
-}
+// --------- Controller Repo Service ---------
+service ControllerRegistryService {
 
-// --------- External Controller Service ---------
-
-service AlarmRunTimeService {
-    rpc SnoozeAlarm(SnoozeRequest) returns (SnoozeResponse);
-    rpc DismissAlarm(DismissRequest) returns (DismissResponse);
 }
 
 // --------- Device Types ---------
@@ -256,16 +244,21 @@ message DeviceCapability {
 }
 
 message Device {
-  DeviceId device_id = 1;
-  string label = 2;
-  repeated DeviceCapability capabilities = 3;
+  ControllerId controller_id = 1;
+  DeviceId device_id = 2;
+  string label = 3;
+  repeated DeviceCapability capabilities = 4;
 }
 
 // --------- Device Register Service Request/Response ---------
 
+message AddDeviceRequest {
+  Device device = 1;
+  ControllerId controller_id = 2;
+}
+
 message UpdateDeviceRequest{
-  DeviceId id = 1;
-  Device device = 2;
+  Device device = 1;
 }
 
 message DeviceRequestResponse{
@@ -284,7 +277,7 @@ message DeviceListResponse {
 
 service DeviceRegistryService{
   rpc GetDevice(DeviceId) returns (Device);
-  rpc AddDevice(Device) returns (DeviceRequestResponse);
+  rpc AddDevice(AddDeviceRequest) returns (DeviceRequestResponse);
   rpc UpdateDevice(UpdateDeviceRequest) returns (DeviceRequestResponse);
   rpc RemoveDevice(DeviceId) returns (DeviceRequestResponse);
   rpc ListDevices(DeviceListRequest) returns (DeviceListResponse);
@@ -293,4 +286,12 @@ service DeviceRegistryService{
 // --------- Storage ---------
 message AlarmStorage {
   repeated Alarm alarms = 1;
+}
+
+message DeviceStorage {
+  repeated Device devices = 1;
+}
+
+message ControllerStorage {
+  repeated Controller controllers = 1;
 }

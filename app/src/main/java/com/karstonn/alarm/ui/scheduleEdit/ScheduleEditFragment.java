@@ -294,7 +294,6 @@ public class ScheduleEditFragment extends Fragment {
         AlarmPhase newPhase = AlarmPhase.newBuilder()
                 .setLabel("new phase")
                 .setPhaseId(AlarmPhaseId.newBuilder()
-                        .setAlarmId(scheduleEditVm.getDraftAlarm().getId())
                         .setPhaseId(newPhaseId)
                         .build())
                 .build();

@@ -16,7 +16,7 @@ public class InMemoryAlarmRepo implements AlarmRepo {
     private final Map<String, Alarm> alarms = new HashMap<>();
     @Override
     public CompletableFuture<Alarm> getAlarm(AlarmId id) {
-        return CompletableFuture.completedFuture(alarms.get(id.getId()));
+        return CompletableFuture.completedFuture(alarms.get(id.getAlarmId()));
     }
 
     @Override
@@ -35,49 +35,55 @@ public class InMemoryAlarmRepo implements AlarmRepo {
 
     @Override
     public CompletableFuture<AlarmRequestResponse> addAlarm(Alarm alarm) {
-        AlarmRequestResponse response;
-        if (!alarm.hasId() || alarm.getId().getId().isEmpty() && !alarms.containsKey(alarm.getId().getId())) {
-            alarm = alarm.toBuilder()
-                    .setId(newID())
-                    .build();
 
-            alarms.put(alarm.getId().getId(), alarm);
+        AlarmId id = newID();
 
-            response = AlarmRequestResponse.newBuilder()
-                    .setSuccess(true)
-                    .build();
-        } else {
-            response = AlarmRequestResponse.newBuilder()
-                    .setSuccess(false)
-                    .build();
-        }
-        return CompletableFuture.completedFuture(response);
+        alarm = alarm.toBuilder()
+                .setId(id)
+                .build();
+
+        alarms.put(id.getAlarmId(), alarm);
+
+        return CompletableFuture.completedFuture(
+                AlarmRequestResponse.newBuilder()
+                        .setSuccess(true)
+                        .build()
+        );
     }
 
     @Override
-    public CompletableFuture<AlarmRequestResponse> updateAlarm(UpdateAlarmRequest updateRequest) {
-        AlarmRequestResponse response;
-        Alarm alarm = updateRequest.getAlarm();
+    public CompletableFuture<AlarmRequestResponse> updateAlarm(
+            UpdateAlarmRequest request
+    ) {
+        String id = request.getId().getAlarmId();
 
-        if (!alarm.hasId() || alarm.getId().getId().isEmpty()) {
-            alarm = alarm.toBuilder()
-                    .setId(newID())
-                    .build();
+        if (!alarms.containsKey(id)) {
+            return CompletableFuture.completedFuture(
+                    AlarmRequestResponse.newBuilder()
+                            .setSuccess(false)
+                            .build()
+            );
         }
 
-        alarms.put(alarm.getId().getId(), alarm);
-
-        response = AlarmRequestResponse.newBuilder()
-                .setSuccess(true)
+        Alarm alarm = request.getAlarm()
+                .toBuilder()
+                .setId(request.getId())
                 .build();
-        return CompletableFuture.completedFuture(response);
+
+        alarms.put(id, alarm);
+
+        return CompletableFuture.completedFuture(
+                AlarmRequestResponse.newBuilder()
+                        .setSuccess(true)
+                        .build()
+        );
     }
 
     @Override
     public CompletableFuture<AlarmRequestResponse> removeAlarm(AlarmId id) {
         //TODO if id doesn't exist, return false
         AlarmRequestResponse response;
-        alarms.remove(id.getId());
+        alarms.remove(id.getAlarmId());
         response = AlarmRequestResponse.newBuilder()
                 .setSuccess(true)
                 .build();
@@ -92,7 +98,7 @@ public class InMemoryAlarmRepo implements AlarmRepo {
         } while (alarms.containsKey(id));
 
         return AlarmId.newBuilder()
-                .setId(id)
+                .setAlarmId(id)
                 .build();
     }
 

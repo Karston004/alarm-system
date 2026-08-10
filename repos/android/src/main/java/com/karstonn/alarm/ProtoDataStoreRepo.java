@@ -77,11 +77,11 @@ public class ProtoDataStoreRepo implements AlarmRepo{
         // Give new alarms an ID if they do not already have one.
         Alarm alarmToAdd = alarm;
 
-        if (!alarm.hasId() || alarm.getId().getId().isEmpty()) {
+        if (!alarm.hasId() || alarm.getId().getAlarmId().isEmpty()) {
 
             //TODO - we sure this is unique!?!?!?!?
             AlarmId id = AlarmId.newBuilder()
-                    .setId(UUID.randomUUID().toString())
+                    .setAlarmId(UUID.randomUUID().toString())
                     .build();
 
             alarmToAdd = alarm.toBuilder()
