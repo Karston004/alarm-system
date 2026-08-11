@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "alarm-cloud"
+
+include(":server")
+include(":proto")
+include(":repos:java")
+
+project(":server").projectDir = file("server")
+project(":proto").projectDir = file("proto")
+project(":repos:java").projectDir = file("repos/java")
+
+// Don't use the normal Android-oriented root build.gradle.
+rootProject.buildFileName = "cloud-root.gradle"

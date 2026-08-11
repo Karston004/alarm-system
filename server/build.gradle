@@ -8,6 +8,10 @@ java {
     }
 }
 
+dependencies {
+    implementation project(":proto")
+}
+
 application {
     mainClass = 'com.karstonn.alarm.server.ServerMain'
 }

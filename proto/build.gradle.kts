@@ -3,6 +3,12 @@ plugins {
     id("com.google.protobuf") version "0.9.4"
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 dependencies {
     api("com.google.protobuf:protobuf-java:3.25.3")
 

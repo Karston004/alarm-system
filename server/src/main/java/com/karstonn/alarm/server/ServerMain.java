@@ -1,5 +1,6 @@
 package com.karstonn.alarm.server;
 
+import com.karstonn.alarmsystem.proto.Alarm;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -34,9 +35,15 @@ public class ServerMain {
             HttpExchange exchange
     ) throws IOException {
 
+        Alarm alarm = Alarm.getDefaultInstance();
+
+        String message =
+                "Alarm System server is online\n"
+                        + "Proto loaded: "
+                        + alarm.getClass().getSimpleName();
+
         byte[] response =
-                "Alarm System server is online"
-                        .getBytes(StandardCharsets.UTF_8);
+                message.getBytes(StandardCharsets.UTF_8);
 
         exchange.getResponseHeaders()
                 .set("Content-Type", "text/plain; charset=utf-8");
