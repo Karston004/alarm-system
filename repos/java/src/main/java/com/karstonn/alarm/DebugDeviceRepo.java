@@ -31,8 +31,9 @@ public class DebugDeviceRepo implements DeviceRepo{
         devices.put("Debug Device: General",    createDebugTextDevice());
     }
     @Override
-    public Device getDevice(DeviceId id) {
-        return devices.get(id.getId());
+    public CompletableFuture<Device> getDevice(DeviceId id) {
+        Device response = devices.get(id.getId());
+        return CompletableFuture.completedFuture(response);
     }
 
     @Override
