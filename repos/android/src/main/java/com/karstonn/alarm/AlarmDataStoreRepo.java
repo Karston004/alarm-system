@@ -28,9 +28,9 @@ import com.google.common.util.concurrent.ListenableFuture;
  * Does not scale well - suitable for single user only.
  * Does not require a network connection.
  */
-public class ProtoDataStoreRepo implements AlarmRepo{
+public class AlarmDataStoreRepo implements AlarmRepo{
     private final GuavaDataStore<AlarmStorage> dataStore;
-    public ProtoDataStoreRepo(Context context){
+    public AlarmDataStoreRepo(Context context){
         this.dataStore = new GuavaDataStore.Builder<>(
                 context,
                 "alarms.pb",

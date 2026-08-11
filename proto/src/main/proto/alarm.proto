@@ -159,21 +159,55 @@ message Controller {
 message GetControllerRequest {
   ControllerId controller_id =1;
 }
+message GetControllerResponse {
+  bool success = 1;
+  string msg = 2;
+  optional Controller controller = 3;
+}
+
 message AddControllerRequest {
   Controller controller = 1;
 }
+message AddControllerResponse {
+  bool success = 1;
+  string msg = 2;
+}
 
-message UpdateController {
+message UpdateControllerRequest {
   Controller controller = 1;
+}
+message UpdateControllerResponse {
+  bool success = 1;
+  string msg = 2;
 }
 
 message RemoveControllerRequest {
   ControllerId controller_id = 1;
 }
+message RemoveControllerResponse {
+  bool success = 1;
+  string msg = 2;
+}
+
+message ListControllersRequest {}
+message ListControllersResponse {
+  repeated Controller controllers = 1;
+}
+
+message RequestIDRequest {}
+message RequestIDResponse {
+  ControllerId controller_id= 1;
+}
+
 
 // --------- Controller Repo Service ---------
 service ControllerRegistryService {
-
+  rpc GetController(GetControllerRequest) returns (GetControllerResponse);
+  rpc AddController(AddControllerRequest) returns (AddControllerResponse);
+  rpc RemoveController(RemoveControllerRequest) returns (RemoveControllerResponse);
+  rpc UpdateController(UpdateControllerRequest) returns (UpdateControllerResponse);
+  rpc ListControllers(ListControllersRequest) returns (ListControllersResponse);
+  rpc RequestUUID (RequestIDRequest) returns (RequestIDResponse);
 }
 
 // --------- Device Types ---------
