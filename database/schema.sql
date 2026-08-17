@@ -269,6 +269,8 @@ CREATE TABLE ActionParameters (
 
     double_val REAL,
 
+    UNIQUE (action_id, parameter_key),
+
     FOREIGN KEY (action_id)
         REFERENCES Actions(action_id)
         ON DELETE CASCADE,
