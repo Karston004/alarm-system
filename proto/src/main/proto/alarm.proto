@@ -68,8 +68,7 @@ message ActionParameter {
 // -- Action Wrapper --
 
 message ActionId {
-  AlarmPhaseId phase_id = 1;
-  string action_id = 2;
+  string action_id = 1;
 }
 
 message Action {
