@@ -50,7 +50,7 @@ public class ScheduleEditViewModel extends ViewModel {
             if (!alarm.hasId() || alarm.getId().getAlarmId().isBlank()) {
 
                 // NEW ALARM
-                repo.addAlarm(AddAlarmRequest.newBuilder().setAlarm(alarm).build()).get();
+                draftAlarm.setId(repo.addAlarm(AddAlarmRequest.newBuilder().setAlarm(alarm).build()).get().getId());
 
             } else if (hasUnsavedChanges) {
 
