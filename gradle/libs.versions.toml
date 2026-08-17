@@ -1,5 +1,18 @@
 [versions]
+
+# Build
 agp = "8.13.1"
+
+# Android SDK
+compileSdk = "36"
+minSdk = "26"
+targetSdk = "36"
+
+# Java
+androidJava = "11"
+serverJava = "21"
+
+# Existing Android libs
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -9,16 +22,37 @@ activity = "1.8.0"
 constraintlayout = "2.1.4"
 recyclerview = "1.4.0"
 
+# Alarm system dependencies
+grpc = "1.62.2"
+gson = "2.14.0"
+guava = "33.6.0-android"
+datastore = "1.2.1"
+
+
 [libraries]
+
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 
-[plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+
+datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+datastore-guava = { module = "androidx.datastore:datastore-guava", version.ref = "datastore" }
+
+
+[plugins]
+
+android-application = { id = "com.android.application", version.ref = "agp" }

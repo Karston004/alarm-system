@@ -10,4 +10,5 @@ java {
 
 dependencies {
     implementation(project(":proto"))
+    implementation(libs.gson)
 }
