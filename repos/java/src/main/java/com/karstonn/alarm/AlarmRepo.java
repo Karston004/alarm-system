@@ -1,5 +1,7 @@
 package com.karstonn.alarm;
 
+import com.karstonn.alarmsystem.proto.AddAlarmRequest;
+import com.karstonn.alarmsystem.proto.AddAlarmResponse;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmId;
 import com.karstonn.alarmsystem.proto.AlarmListResponse;
@@ -14,7 +16,7 @@ public interface AlarmRepo {
 
     CompletableFuture<AlarmListResponse> listAlarms();
 
-    CompletableFuture<AlarmRequestResponse> addAlarm(Alarm alarm);
+    CompletableFuture<AddAlarmResponse> addAlarm(AddAlarmRequest addAlarmRequest);
 
     CompletableFuture<AlarmRequestResponse> updateAlarm(UpdateAlarmRequest updateRequest);
 

@@ -113,6 +113,15 @@ message UpdateAlarmRequest{
   Alarm alarm = 2;
 }
 
+message AddAlarmRequest {
+  Alarm alarm = 1;
+}
+message AddAlarmResponse {
+  bool success = 1;
+  string msg = 2;
+  AlarmId id = 3;
+}
+
 message AlarmRequestResponse{
   bool success = 1;
 }
@@ -135,7 +144,7 @@ message AlarmListResponse {
 
 service AlarmRepoService {
   rpc GetAlarm(AlarmId) returns (Alarm);
-  rpc AddAlarm(Alarm) returns (AlarmRequestResponse);
+  rpc AddAlarm(AddAlarmRequest) returns (AddAlarmResponse);
   rpc UpdateAlarm(UpdateAlarmRequest) returns (AlarmRequestResponse);
   rpc RemoveAlarm(AlarmId) returns (AlarmRequestResponse);
   rpc ListAlarms(AlarmListRequest) returns (AlarmListResponse);

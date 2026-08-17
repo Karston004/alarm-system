@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 
 import com.karstonn.alarm.AlarmRepo;
+import com.karstonn.alarmsystem.proto.AddAlarmRequest;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.UpdateAlarmRequest;
 
@@ -49,7 +50,7 @@ public class ScheduleEditViewModel extends ViewModel {
             if (!alarm.hasId() || alarm.getId().getAlarmId().isBlank()) {
 
                 // NEW ALARM
-                repo.addAlarm(alarm).get();
+                repo.addAlarm(AddAlarmRequest.newBuilder().setAlarm(alarm).build()).get();
 
             } else if (hasUnsavedChanges) {
 

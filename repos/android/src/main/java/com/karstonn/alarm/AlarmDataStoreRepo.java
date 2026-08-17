@@ -8,6 +8,8 @@ import androidx.datastore.guava.GuavaDataStore;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.karstonn.alarmsystem.proto.AddAlarmRequest;
+import com.karstonn.alarmsystem.proto.AddAlarmResponse;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmId;
 import com.karstonn.alarmsystem.proto.AlarmListResponse;
@@ -72,14 +74,17 @@ public class AlarmDataStoreRepo implements AlarmRepo{
     }
 
     @Override
-    public CompletableFuture<AlarmRequestResponse> addAlarm(Alarm alarm) {
+    public CompletableFuture<AddAlarmResponse> addAlarm(AddAlarmRequest addAlarmRequest) {
 
         // Give new alarms an ID if they do not already have one.
-        Alarm alarmToAdd = alarm;
+        Alarm alarmToAdd = addAlarmRequest.getAlarm();
+        Alarm alarm = addAlarmRequest.getAlarm();
 
         if (!alarm.hasId() || alarm.getId().getAlarmId().isEmpty()) {
 
-            //TODO - we sure this is unique!?!?!?!?
+            //TODO - we sure this is unique??
+            // odds are low but currently no protection
+            // TODO: add protection later
             AlarmId id = AlarmId.newBuilder()
                     .setAlarmId(UUID.randomUUID().toString())
                     .build();
@@ -111,7 +116,7 @@ public class AlarmDataStoreRepo implements AlarmRepo{
 
         return toCompletableFuture(update)
                 .thenApply(storage ->
-                        AlarmRequestResponse.newBuilder()
+                        AddAlarmResponse.newBuilder()
                                 .setSuccess(added.get())
                                 .build()
                 );
