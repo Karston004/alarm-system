@@ -12,6 +12,7 @@ java {
 dependencies {
     implementation project(":proto")
     implementation project(":repos:java")
+    implementation project(":repos:server")
 
     implementation libs.grpc.stub
     implementation libs.grpc.netty.shaded
