@@ -277,3 +277,22 @@ CREATE TABLE ActionParameters (
         REFERENCES Files(file_id)
         ON DELETE RESTRICT
 );
+
+-- =========================================================
+-- Indexes
+-- =========================================================
+
+CREATE INDEX idx_devices_controller
+    ON Devices(controller_id);
+
+CREATE INDEX idx_phases_alarm
+    ON Phases(alarm_id);
+
+CREATE INDEX idx_actions_phase
+    ON Actions(phase_id);
+
+CREATE INDEX idx_actions_device_capability
+    ON Actions(device_id, device_action_key);
+
+CREATE INDEX idx_action_parameters_action
+    ON ActionParameters(action_id);
