@@ -35,3 +35,28 @@ tasks.register('runTestClient', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.karstonn.alarm.server.ServerTestClient'
 }
+
+tasks.named('run') {
+
+    def envFile = rootProject.file(".env")
+
+    if (envFile.exists()) {
+        envFile.eachLine { line ->
+
+            line = line.trim()
+
+            if (line && !line.startsWith("#")) {
+
+                int equalsIndex = line.indexOf("=")
+
+                if (equalsIndex > 0) {
+
+                    def key = line.substring(0, equalsIndex).trim()
+                    def value = line.substring(equalsIndex + 1).trim()
+
+                    environment key, value
+                }
+            }
+        }
+    }
+}

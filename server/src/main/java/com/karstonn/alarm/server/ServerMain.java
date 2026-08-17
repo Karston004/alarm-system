@@ -1,61 +1,78 @@
 package com.karstonn.alarm.server;
 
-import com.karstonn.alarmsystem.proto.Alarm;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
+import com.karstonn.alarm.AlarmRepo;
+import com.karstonn.alarm.TursoAlarmRepo;
+
+import io.grpc.Server;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 public class ServerMain {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)
+            throws IOException, InterruptedException {
 
         int port = Integer.parseInt(
                 System.getenv().getOrDefault("PORT", "8080")
         );
 
-        HttpServer server = HttpServer.create(
-                new InetSocketAddress("0.0.0.0", port),
-                0
-        );
+        String tursoDatabaseUrl =
+                System.getenv("TURSO_DATABASE_URL");
 
-        server.createContext("/", ServerMain::handleRoot);
+        String tursoAuthToken =
+                System.getenv("TURSO_AUTH_TOKEN");
 
-        server.start();
+        if (tursoDatabaseUrl == null || tursoDatabaseUrl.isBlank()) {
+            throw new IllegalStateException(
+                    "TURSO_DATABASE_URL environment variable is not set"
+            );
+        }
+
+        if (tursoAuthToken == null || tursoAuthToken.isBlank()) {
+            throw new IllegalStateException(
+                    "TURSO_AUTH_TOKEN environment variable is not set"
+            );
+        }
+
+        AlarmRepo alarmRepo =
+                new TursoAlarmRepo(
+                        tursoDatabaseUrl,
+                        tursoAuthToken
+                );
+
+        AlarmRepoServiceImpl alarmService =
+                new AlarmRepoServiceImpl(alarmRepo);
+
+        Server server = NettyServerBuilder
+                .forPort(port)
+                .addService(alarmService)
+                .build()
+                .start();
 
         System.out.println(
-                "Alarm System server running on port " + port
-        );
-    }
-
-    private static void handleRoot(
-            HttpExchange exchange
-    ) throws IOException {
-
-        Alarm alarm = Alarm.getDefaultInstance();
-
-        String message =
-                "Alarm System server is online\n"
-                        + "Proto loaded: "
-                        + alarm.getClass().getSimpleName();
-
-        byte[] response =
-                message.getBytes(StandardCharsets.UTF_8);
-
-        exchange.getResponseHeaders()
-                .set("Content-Type", "text/plain; charset=utf-8");
-
-        exchange.sendResponseHeaders(
-                200,
-                response.length
+                "Alarm System gRPC server running on port " + port
         );
 
-        try (OutputStream output =
-                     exchange.getResponseBody()) {
-            output.write(response);
-        }
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(() -> {
+                    System.out.println(
+                            "Shutting down Alarm System server"
+                    );
+
+                    try {
+                        server.shutdown()
+                                .awaitTermination(
+                                        10,
+                                        TimeUnit.SECONDS
+                                );
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                })
+        );
+
+        server.awaitTermination();
     }
 }
