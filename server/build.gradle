@@ -10,6 +10,7 @@ java {
 
 dependencies {
     implementation project(":proto")
+    implementation project(":repos:java")
 }
 
 application {
@@ -22,4 +23,11 @@ jar {
                 'Main-Class': 'com.karstonn.alarm.server.ServerMain'
         )
     }
+}
+
+
+
+tasks.register('runTestClient', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.karstonn.alarm.server.ServerTestClient'
 }
