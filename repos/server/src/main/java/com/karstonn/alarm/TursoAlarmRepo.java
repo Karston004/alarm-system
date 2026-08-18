@@ -15,6 +15,7 @@ import com.karstonn.alarmsystem.proto.AddAlarmResponse;
 import com.karstonn.alarmsystem.proto.Alarm;
 import com.karstonn.alarmsystem.proto.AlarmId;
 import com.karstonn.alarmsystem.proto.AlarmListResponse;
+import com.karstonn.alarmsystem.proto.AlarmListing;
 import com.karstonn.alarmsystem.proto.AlarmPhase;
 import com.karstonn.alarmsystem.proto.AlarmRequestResponse;
 import com.karstonn.alarmsystem.proto.DayOfWeek;
@@ -106,11 +107,13 @@ public class TursoAlarmRepo implements AlarmRepo {
 
     @Override
     public CompletableFuture<AlarmListResponse> listAlarms() {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "listAlarms not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return listAlarmsBlocking();
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -188,6 +191,76 @@ public class TursoAlarmRepo implements AlarmRepo {
                 .build();
     }
 
+    // =========================================================
+    // List Alarm
+    // =========================================================
+
+    private AlarmListResponse listAlarmsBlocking()
+            throws IOException {
+
+        SqlStatement statement =
+                statement(
+                        """
+                        SELECT
+                            alarm_id,
+                            label,
+                            is_enabled
+                        FROM Alarms;
+                        """
+                );
+
+        JsonObject result =
+                executeQuery(statement);
+
+        JsonArray rows =
+                result.getAsJsonArray("rows");
+
+        AlarmListResponse.Builder response =
+                AlarmListResponse.newBuilder();
+
+        for (JsonElement rowElement : rows) {
+
+            JsonArray row =
+                    rowElement.getAsJsonArray();
+
+            String alarmId =
+                    row.get(0)
+                            .getAsJsonObject()
+                            .get("value")
+                            .getAsString();
+
+            String label =
+                    row.get(1)
+                            .getAsJsonObject()
+                            .get("value")
+                            .getAsString();
+
+            boolean isEnabled =
+                    !"0".equals(
+                            row.get(2)
+                                    .getAsJsonObject()
+                                    .get("value")
+                                    .getAsString()
+                    );
+
+            response.addAlarms(
+                    AlarmListing.newBuilder()
+                            .setId(
+                                    AlarmId.newBuilder()
+                                            .setAlarmId(alarmId)
+                                            .build()
+                            )
+                            .setLabel(label)
+                            .setIsEnabled(isEnabled)
+                            .build()
+            );
+        }
+
+        return response
+                .setSuccess(true)
+                .setMsg("Successfully Listed Alarms")
+                .build();
+    }
 
     // =========================================================
     // Alarm -> SQL
@@ -654,6 +727,30 @@ public class TursoAlarmRepo implements AlarmRepo {
         }
     }
 
+    private JsonObject executeQuery(
+            SqlStatement statement
+    ) throws IOException {
+
+        JsonObject response =
+                sendPipeline(
+                        null,
+                        List.of(
+                                executeRequest(statement),
+                                closeRequest()
+                        )
+                );
+
+        ensureSuccessful(response);
+
+        JsonArray results =
+                response.getAsJsonArray("results");
+
+        return results
+                .get(0)
+                .getAsJsonObject()
+                .getAsJsonObject("response")
+                .getAsJsonObject("result");
+    }
 
     private void rollback(
             String baton

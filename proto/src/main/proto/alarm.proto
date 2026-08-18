@@ -137,7 +137,9 @@ message AlarmListing {
 }
 
 message AlarmListResponse {
-  repeated  AlarmListing alarms = 1;
+  bool success = 1;
+  string msg = 2;
+  repeated  AlarmListing alarms = 3;
 }
 
 // --------- Alarm Repo Service ---------
