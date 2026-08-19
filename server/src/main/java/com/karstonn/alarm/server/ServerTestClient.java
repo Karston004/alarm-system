@@ -42,8 +42,8 @@ public class ServerTestClient {
 
         ManagedChannel channel =
                 ManagedChannelBuilder
-                        .forAddress("localhost", 8080)
-                        .usePlaintext()
+                        .forAddress("alarm-system-server-244710268941.europe-west2.run.app", 443)
+                        .useTransportSecurity()
                         .build();
 
         try {
