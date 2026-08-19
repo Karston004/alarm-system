@@ -31,7 +31,7 @@ public class GrpcAlarmRepo implements AlarmRepo {
         channel =
                 OkHttpChannelBuilder
                         .forAddress(host, port)
-                        .usePlaintext()
+                        .useTransportSecurity()
                         .build();
 
         stub =
