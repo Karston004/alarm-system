@@ -7,6 +7,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import com.google.protobuf.ByteString;
+
 import com.karstonn.alarmsystem.proto.Action;
 import com.karstonn.alarmsystem.proto.ActionParameter;
 import com.karstonn.alarmsystem.proto.ActionValue;
@@ -43,16 +45,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 public class TursoAlarmRepo implements AlarmRepo {
-    private static <T> CompletableFuture<T> failedFuture(
-            Throwable throwable
-    ) {
-        CompletableFuture<T> future =
-                new CompletableFuture<>();
-
-        future.completeExceptionally(throwable);
-
-        return future;
-    }
 
     private final String pipelineUrl;
     private final String authToken;
@@ -96,12 +88,17 @@ public class TursoAlarmRepo implements AlarmRepo {
     // =========================================================
 
     @Override
-    public CompletableFuture<Alarm> getAlarm(AlarmId id) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "getAlarm not implemented yet"
-                )
-        );
+    public CompletableFuture<Alarm> getAlarm(
+            AlarmId id
+    ) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return getAlarmBlocking(id);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -110,6 +107,7 @@ public class TursoAlarmRepo implements AlarmRepo {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return listAlarmsBlocking();
+
             } catch (Exception e) {
                 throw new CompletionException(e);
             }
@@ -119,11 +117,11 @@ public class TursoAlarmRepo implements AlarmRepo {
 
     @Override
     public CompletableFuture<AddAlarmResponse> addAlarm(
-            AddAlarmRequest addAlarmRequest
+            AddAlarmRequest request
     ) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return addAlarmBlocking(addAlarmRequest);
+                return addAlarmBlocking(request);
 
             } catch (Exception e) {
                 throw new CompletionException(e);
@@ -134,13 +132,16 @@ public class TursoAlarmRepo implements AlarmRepo {
 
     @Override
     public CompletableFuture<AlarmRequestResponse> updateAlarm(
-            UpdateAlarmRequest updateRequest
+            UpdateAlarmRequest request
     ) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "updateAlarm not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return updateAlarmBlocking(request);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -148,11 +149,14 @@ public class TursoAlarmRepo implements AlarmRepo {
     public CompletableFuture<AlarmRequestResponse> removeAlarm(
             AlarmId id
     ) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "removeAlarm not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return removeAlarmBlocking(id);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -170,11 +174,15 @@ public class TursoAlarmRepo implements AlarmRepo {
             );
         }
 
-        Alarm alarm = request.getAlarm();
+        Alarm alarm =
+                request.getAlarm();
 
-        AlarmId alarmId = AlarmId.newBuilder()
-                .setAlarmId(UUID.randomUUID().toString())
-                .build();
+        AlarmId alarmId =
+                AlarmId.newBuilder()
+                        .setAlarmId(
+                                UUID.randomUUID().toString()
+                        )
+                        .build();
 
         List<SqlStatement> statements =
                 buildAlarmInsertStatements(
@@ -191,26 +199,27 @@ public class TursoAlarmRepo implements AlarmRepo {
                 .build();
     }
 
+
     // =========================================================
-    // List Alarm
+    // List Alarms
     // =========================================================
 
     private AlarmListResponse listAlarmsBlocking()
             throws IOException {
 
-        SqlStatement statement =
-                statement(
-                        """
-                        SELECT
-                            alarm_id,
-                            label,
-                            is_enabled
-                        FROM Alarms;
-                        """
-                );
-
         JsonObject result =
-                executeQuery(statement);
+                executeQuery(
+                        statement(
+                                """
+                                SELECT
+                                    alarm_id,
+                                    label,
+                                    is_enabled
+                                FROM Alarms
+                                ORDER BY label, alarm_id
+                                """
+                        )
+                );
 
         JsonArray rows =
                 result.getAsJsonArray("rows");
@@ -223,44 +232,772 @@ public class TursoAlarmRepo implements AlarmRepo {
             JsonArray row =
                     rowElement.getAsJsonArray();
 
-            String alarmId =
-                    row.get(0)
-                            .getAsJsonObject()
-                            .get("value")
-                            .getAsString();
-
-            String label =
-                    row.get(1)
-                            .getAsJsonObject()
-                            .get("value")
-                            .getAsString();
-
-            boolean isEnabled =
-                    !"0".equals(
-                            row.get(2)
-                                    .getAsJsonObject()
-                                    .get("value")
-                                    .getAsString()
-                    );
-
             response.addAlarms(
                     AlarmListing.newBuilder()
                             .setId(
                                     AlarmId.newBuilder()
-                                            .setAlarmId(alarmId)
+                                            .setAlarmId(
+                                                    textCell(
+                                                            row,
+                                                            0
+                                                    )
+                                            )
                                             .build()
                             )
-                            .setLabel(label)
-                            .setIsEnabled(isEnabled)
+                            .setLabel(
+                                    textCell(
+                                            row,
+                                            1
+                                    )
+                            )
+                            .setIsEnabled(
+                                    boolCell(
+                                            row,
+                                            2
+                                    )
+                            )
                             .build()
             );
         }
 
         return response
                 .setSuccess(true)
-                .setMsg("Successfully Listed Alarms")
+                .setMsg("Successfully listed alarms")
                 .build();
     }
+
+
+    // =========================================================
+    // Get Alarm
+    // =========================================================
+
+    private Alarm getAlarmBlocking(
+            AlarmId id
+    ) throws IOException {
+
+        validateAlarmId(id);
+
+        JsonObject result =
+                executeQuery(
+                        statement(
+                                """
+                                SELECT
+                                    label,
+                                    is_recurring,
+                                    is_enabled,
+                                    monday,
+                                    tuesday,
+                                    wednesday,
+                                    thursday,
+                                    friday,
+                                    saturday,
+                                    sunday
+                                FROM Alarms
+                                WHERE alarm_id = ?
+                                """,
+
+                                textArg(
+                                        id.getAlarmId()
+                                )
+                        )
+                );
+
+        JsonArray rows =
+                result.getAsJsonArray("rows");
+
+        if (rows.size() == 0) {
+            throw new IllegalArgumentException(
+                    "Alarm does not exist: "
+                            + id.getAlarmId()
+            );
+        }
+
+        JsonArray row =
+                rows.get(0)
+                        .getAsJsonArray();
+
+        Alarm.Builder alarm =
+                Alarm.newBuilder()
+                        .setId(id)
+                        .setLabel(
+                                textCell(
+                                        row,
+                                        0
+                                )
+                        )
+                        .setIsRecurring(
+                                boolCell(
+                                        row,
+                                        1
+                                )
+                        )
+                        .setIsEnabled(
+                                boolCell(
+                                        row,
+                                        2
+                                )
+                        );
+
+        if (boolCell(row, 3)) {
+            alarm.addDays(
+                    DayOfWeek.MONDAY
+            );
+        }
+
+        if (boolCell(row, 4)) {
+            alarm.addDays(
+                    DayOfWeek.TUESDAY
+            );
+        }
+
+        if (boolCell(row, 5)) {
+            alarm.addDays(
+                    DayOfWeek.WEDNESDAY
+            );
+        }
+
+        if (boolCell(row, 6)) {
+            alarm.addDays(
+                    DayOfWeek.THURSDAY
+            );
+        }
+
+        if (boolCell(row, 7)) {
+            alarm.addDays(
+                    DayOfWeek.FRIDAY
+            );
+        }
+
+        if (boolCell(row, 8)) {
+            alarm.addDays(
+                    DayOfWeek.SATURDAY
+            );
+        }
+
+        if (boolCell(row, 9)) {
+            alarm.addDays(
+                    DayOfWeek.SUNDAY
+            );
+        }
+
+        loadPhases(
+                alarm,
+                id
+        );
+
+        return alarm.build();
+    }
+
+
+    private void loadPhases(
+            Alarm.Builder alarm,
+            AlarmId alarmId
+    ) throws IOException {
+
+        JsonObject result =
+                executeQuery(
+                        statement(
+                                """
+                                SELECT
+                                    phase_id,
+                                    label,
+                                    trigger_time
+                                FROM Phases
+                                WHERE alarm_id = ?
+                                ORDER BY trigger_time, phase_id
+                                """,
+
+                                textArg(
+                                        alarmId.getAlarmId()
+                                )
+                        )
+                );
+
+        JsonArray rows =
+                result.getAsJsonArray("rows");
+
+        for (JsonElement element : rows) {
+
+            JsonArray row =
+                    element.getAsJsonArray();
+
+            String phaseId =
+                    textCell(
+                            row,
+                            0
+                    );
+
+            long triggerTime =
+                    integerCell(
+                            row,
+                            2
+                    );
+
+            AlarmPhase.Builder phase =
+                    AlarmPhase.newBuilder()
+                            .setLabel(
+                                    textCell(
+                                            row,
+                                            1
+                                    )
+                            );
+
+            phase.getPhaseIdBuilder()
+                    .setPhaseId(
+                            phaseId
+                    );
+
+            phase.getTriggerTimeBuilder()
+                    .setHour(
+                            (int) (
+                                    triggerTime / 60
+                            )
+                    )
+                    .setMin(
+                            (int) (
+                                    triggerTime % 60
+                            )
+                    );
+
+            loadActions(
+                    phase,
+                    phaseId
+            );
+
+            alarm.addAlarmPhases(
+                    phase
+            );
+        }
+    }
+
+
+    private void loadActions(
+            AlarmPhase.Builder phase,
+            String phaseId
+    ) throws IOException {
+
+        JsonObject result =
+                executeQuery(
+                        statement(
+                                """
+                                SELECT
+                                    action_id,
+                                    label,
+                                    device_id,
+                                    device_action_key
+                                FROM Actions
+                                WHERE phase_id = ?
+                                ORDER BY action_id
+                                """,
+
+                                textArg(
+                                        phaseId
+                                )
+                        )
+                );
+
+        JsonArray rows =
+                result.getAsJsonArray("rows");
+
+        for (JsonElement element : rows) {
+
+            JsonArray row =
+                    element.getAsJsonArray();
+
+            String actionId =
+                    textCell(
+                            row,
+                            0
+                    );
+
+            Action.Builder action =
+                    Action.newBuilder()
+                            .setLabel(
+                                    textCell(
+                                            row,
+                                            1
+                                    )
+                            );
+
+            action.getIdBuilder()
+                    .setActionId(
+                            actionId
+                    );
+
+            action.getDeviceIdBuilder()
+                    .setId(
+                            textCell(
+                                    row,
+                                    2
+                            )
+                    );
+
+            action.getDeviceActionKeyBuilder()
+                    .setKey(
+                            textCell(
+                                    row,
+                                    3
+                            )
+                    );
+
+            loadParameters(
+                    action,
+                    actionId
+            );
+
+            phase.addActions(
+                    action
+            );
+        }
+    }
+
+
+    private void loadParameters(
+            Action.Builder action,
+            String actionId
+    ) throws IOException {
+
+        JsonObject result =
+                executeQuery(
+                        statement(
+                                """
+                                SELECT
+                                    ap.parameter_id,
+                                    ap.parameter_key,
+                                    ap.label,
+                                    ap.units,
+                                    ap.value_type,
+                                    ap.string_val,
+                                    ap.uint32_val,
+                                    ap.int32_val,
+                                    ap.bool_val,
+                                    ap.rgba_val,
+                                    ap.percentage_val,
+                                    ap.double_val,
+
+                                    f.filename,
+                                    f.file_type,
+                                    f.size_bytes,
+                                    f.file_content
+
+                                FROM ActionParameters ap
+
+                                LEFT JOIN Files f
+                                    ON f.file_id = ap.file_id
+
+                                WHERE ap.action_id = ?
+
+                                ORDER BY ap.parameter_id
+                                """,
+
+                                textArg(
+                                        actionId
+                                )
+                        )
+                );
+
+        JsonArray rows =
+                result.getAsJsonArray("rows");
+
+        for (JsonElement element : rows) {
+
+            JsonArray row =
+                    element.getAsJsonArray();
+
+            ActionParameter.Builder parameter =
+                    ActionParameter.newBuilder()
+                            .setParameterId(
+                                    textCell(
+                                            row,
+                                            0
+                                    )
+                            )
+                            .setParameterKey(
+                                    textCell(
+                                            row,
+                                            1
+                                    )
+                            )
+                            .setLabel(
+                                    textCell(
+                                            row,
+                                            2
+                                    )
+                            );
+
+            if (!nullCell(row, 3)) {
+                parameter.setUnits(
+                        textCell(
+                                row,
+                                3
+                        )
+                );
+            }
+
+            String valueType =
+                    textCell(
+                            row,
+                            4
+                    );
+
+            ActionValue.Builder value =
+                    ActionValue.newBuilder();
+
+            switch (valueType) {
+
+                case "STRING" ->
+                        value.setStringVal(
+                                textCell(
+                                        row,
+                                        5
+                                )
+                        );
+
+                case "UINT32" ->
+                        value.setUint32Val(
+                                (int) integerCell(
+                                        row,
+                                        6
+                                )
+                        );
+
+                case "INT32" ->
+                        value.setInt32Val(
+                                (int) integerCell(
+                                        row,
+                                        7
+                                )
+                        );
+
+                case "BOOL" ->
+                        value.setBoolVal(
+                                boolCell(
+                                        row,
+                                        8
+                                )
+                        );
+
+                case "RGBA" ->
+                        value.getRgbaValBuilder()
+                                .setRgba(
+                                        (int) integerCell(
+                                                row,
+                                                9
+                                        )
+                                );
+
+                case "PERCENTAGE" ->
+                        value.getPercentageBuilder()
+                                .setValue(
+                                        (int) integerCell(
+                                                row,
+                                                10
+                                        )
+                                );
+
+                case "DOUBLE" ->
+                        value.setDoubleVal(
+                                doubleCell(
+                                        row,
+                                        11
+                                )
+                        );
+
+                case "FILE" -> {
+
+                    if (
+                            nullCell(row, 12)
+                                    || nullCell(row, 13)
+                                    || nullCell(row, 14)
+                                    || nullCell(row, 15)
+                    ) {
+                        throw new IOException(
+                                "FILE parameter is missing its Files row"
+                        );
+                    }
+
+                    value.getFileBuilder()
+                            .setFilename(
+                                    textCell(
+                                            row,
+                                            12
+                                    )
+                            )
+                            .setFileType(
+                                    textCell(
+                                            row,
+                                            13
+                                    )
+                            )
+                            .setSizeBytes(
+                                    integerCell(
+                                            row,
+                                            14
+                                    )
+                            )
+                            .setFileContent(
+                                    ByteString.copyFrom(
+                                            blobCell(
+                                                    row,
+                                                    15
+                                            )
+                                    )
+                            );
+                }
+
+                default ->
+                        throw new IOException(
+                                "Unknown ActionParameter type: "
+                                        + valueType
+                        );
+            }
+
+            parameter.setValue(
+                    value
+            );
+
+            action.addParameters(
+                    parameter
+            );
+        }
+    }
+
+
+    // =========================================================
+    // Update Alarm
+    // =========================================================
+
+    private AlarmRequestResponse updateAlarmBlocking(
+            UpdateAlarmRequest request
+    ) throws IOException {
+
+        if (!request.hasAlarm()) {
+            throw new IllegalArgumentException(
+                    "UpdateAlarmRequest does not contain an alarm"
+            );
+        }
+
+        Alarm alarm =
+                request.getAlarm();
+
+        if (!alarm.hasId()) {
+            throw new IllegalArgumentException(
+                    "Alarm being updated has no ID"
+            );
+        }
+
+        AlarmId alarmId =
+                alarm.getId();
+
+        validateAlarmId(alarmId);
+
+        if (!alarmExists(alarmId)) {
+            return AlarmRequestResponse.newBuilder()
+                    .setSuccess(false)
+                    .build();
+        }
+
+        List<SqlStatement> statements =
+                new ArrayList<>();
+
+        statements.add(
+                statement(
+                        """
+                        UPDATE Alarms
+                        SET
+                            label = ?,
+                            is_recurring = ?,
+                            is_enabled = ?,
+                            monday = ?,
+                            tuesday = ?,
+                            wednesday = ?,
+                            thursday = ?,
+                            friday = ?,
+                            saturday = ?,
+                            sunday = ?
+                        WHERE alarm_id = ?
+                        """,
+
+                        textArg(
+                                alarm.getLabel()
+                        ),
+
+                        boolArg(
+                                alarm.getIsRecurring()
+                        ),
+                        boolArg(
+                                alarm.getIsEnabled()
+                        ),
+
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.MONDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.TUESDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.WEDNESDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.THURSDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.FRIDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.SATURDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.SUNDAY
+                                )
+                        ),
+
+                        textArg(
+                                alarmId.getAlarmId()
+                        )
+                )
+        );
+
+        /*
+         * Phases -> Actions -> ActionParameters are deleted
+         * through the database's ON DELETE CASCADE rules.
+         *
+         * The updated child tree is then inserted from the
+         * protobuf currently supplied by the client.
+         */
+        statements.add(
+                statement(
+                        """
+                        DELETE FROM Phases
+                        WHERE alarm_id = ?
+                        """,
+
+                        textArg(
+                                alarmId.getAlarmId()
+                        )
+                )
+        );
+
+        addAlarmChildInsertStatements(
+                statements,
+                alarm,
+                alarmId
+        );
+
+        addDeleteOrphanFilesStatement(
+                statements
+        );
+
+        executeTransaction(
+                statements
+        );
+
+        return AlarmRequestResponse.newBuilder()
+                .setSuccess(true)
+                .build();
+    }
+
+
+    // =========================================================
+    // Delete Alarm
+    // =========================================================
+
+    private AlarmRequestResponse removeAlarmBlocking(
+            AlarmId id
+    ) throws IOException {
+
+        validateAlarmId(id);
+
+        if (!alarmExists(id)) {
+            return AlarmRequestResponse.newBuilder()
+                    .setSuccess(false)
+                    .build();
+        }
+
+        List<SqlStatement> statements =
+                new ArrayList<>();
+
+        /*
+         * Alarms -> Phases -> Actions -> ActionParameters
+         * are removed through ON DELETE CASCADE.
+         */
+        statements.add(
+                statement(
+                        """
+                        DELETE FROM Alarms
+                        WHERE alarm_id = ?
+                        """,
+
+                        textArg(
+                                id.getAlarmId()
+                        )
+                )
+        );
+
+        /*
+         * Files are referenced by ActionParameters rather than
+         * being children of them, so remove any file rows left
+         * without a parameter reference after the cascade.
+         */
+        addDeleteOrphanFilesStatement(
+                statements
+        );
+
+        executeTransaction(
+                statements
+        );
+
+        return AlarmRequestResponse.newBuilder()
+                .setSuccess(true)
+                .build();
+    }
+
+
+    private boolean alarmExists(
+            AlarmId id
+    ) throws IOException {
+
+        JsonObject result =
+                executeQuery(
+                        statement(
+                                """
+                                SELECT 1
+                                FROM Alarms
+                                WHERE alarm_id = ?
+                                LIMIT 1
+                                """,
+
+                                textArg(
+                                        id.getAlarmId()
+                                )
+                        )
+                );
+
+        return result
+                .getAsJsonArray("rows")
+                .size() > 0;
+    }
+
 
     // =========================================================
     // Alarm -> SQL
@@ -273,7 +1010,6 @@ public class TursoAlarmRepo implements AlarmRepo {
         List<SqlStatement> statements =
                 new ArrayList<>();
 
-
         // -----------------------------------------------------
         // Alarm
         // -----------------------------------------------------
@@ -281,70 +1017,143 @@ public class TursoAlarmRepo implements AlarmRepo {
         statements.add(
                 statement(
                         """
-                                INSERT INTO Alarms (
-                                    alarm_id,
-                                    label,
-                                    is_recurring,
-                                    is_enabled,
-                                    monday,
-                                    tuesday,
-                                    wednesday,
-                                    thursday,
-                                    friday,
-                                    saturday,
-                                    sunday
+                        INSERT INTO Alarms (
+                            alarm_id,
+                            label,
+                            is_recurring,
+                            is_enabled,
+                            monday,
+                            tuesday,
+                            wednesday,
+                            thursday,
+                            friday,
+                            saturday,
+                            sunday
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+
+                        textArg(
+                                alarmId.getAlarmId()
+                        ),
+                        textArg(
+                                alarm.getLabel()
+                        ),
+
+                        boolArg(
+                                alarm.getIsRecurring()
+                        ),
+                        boolArg(
+                                alarm.getIsEnabled()
+                        ),
+
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.MONDAY
                                 )
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                """,
-
-                        textArg(alarmId.getAlarmId()),
-                        textArg(alarm.getLabel()),
-
-                        boolArg(alarm.getIsRecurring()),
-                        boolArg(alarm.getIsEnabled()),
-
-                        boolArg(hasDay(alarm, DayOfWeek.MONDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.TUESDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.WEDNESDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.THURSDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.FRIDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.SATURDAY)),
-                        boolArg(hasDay(alarm, DayOfWeek.SUNDAY))
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.TUESDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.WEDNESDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.THURSDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.FRIDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.SATURDAY
+                                )
+                        ),
+                        boolArg(
+                                hasDay(
+                                        alarm,
+                                        DayOfWeek.SUNDAY
+                                )
+                        )
                 )
         );
 
+        addAlarmChildInsertStatements(
+                statements,
+                alarm,
+                alarmId
+        );
+
+        return statements;
+    }
+
+
+    private void addAlarmChildInsertStatements(
+            List<SqlStatement> statements,
+            Alarm alarm,
+            AlarmId alarmId
+    ) {
 
         // -----------------------------------------------------
         // Phases
         // -----------------------------------------------------
 
-        for (AlarmPhase phase : alarm.getAlarmPhasesList()) {
+        for (
+                AlarmPhase phase
+                : alarm.getAlarmPhasesList()
+        ) {
 
             String phaseId =
                     usableId(
-                            phase.getPhaseId().getPhaseId()
+                            phase.getPhaseId()
+                                    .getPhaseId()
                     );
 
             int triggerTime =
-                    phase.getTriggerTime().getHour() * 60
-                            + phase.getTriggerTime().getMin();
+                    phase.getTriggerTime()
+                            .getHour()
+                            * 60
+                            + phase.getTriggerTime()
+                            .getMin();
 
             statements.add(
                     statement(
                             """
-                                    INSERT INTO Phases (
-                                        phase_id,
-                                        alarm_id,
-                                        label,
-                                        trigger_time
-                                    )
-                                    VALUES (?, ?, ?, ?)
-                                    """,
+                            INSERT INTO Phases (
+                                phase_id,
+                                alarm_id,
+                                label,
+                                trigger_time
+                            )
+                            VALUES (?, ?, ?, ?)
+                            """,
 
-                            textArg(phaseId),
-                            textArg(alarmId.getAlarmId()),
-                            textArg(phase.getLabel()),
-                            integerArg(triggerTime)
+                            textArg(
+                                    phaseId
+                            ),
+                            textArg(
+                                    alarmId.getAlarmId()
+                            ),
+                            textArg(
+                                    phase.getLabel()
+                            ),
+                            integerArg(
+                                    triggerTime
+                            )
                     )
             );
 
@@ -353,29 +1162,39 @@ public class TursoAlarmRepo implements AlarmRepo {
             // Actions
             // -------------------------------------------------
 
-            for (Action action : phase.getActionsList()) {
+            for (
+                    Action action
+                    : phase.getActionsList()
+            ) {
 
                 String actionId =
                         usableId(
-                                action.getId().getActionId()
+                                action.getId()
+                                        .getActionId()
                         );
 
                 statements.add(
                         statement(
                                 """
-                                        INSERT INTO Actions (
-                                            action_id,
-                                            phase_id,
-                                            label,
-                                            device_id,
-                                            device_action_key
-                                        )
-                                        VALUES (?, ?, ?, ?, ?)
-                                        """,
+                                INSERT INTO Actions (
+                                    action_id,
+                                    phase_id,
+                                    label,
+                                    device_id,
+                                    device_action_key
+                                )
+                                VALUES (?, ?, ?, ?, ?)
+                                """,
 
-                                textArg(actionId),
-                                textArg(phaseId),
-                                textArg(action.getLabel()),
+                                textArg(
+                                        actionId
+                                ),
+                                textArg(
+                                        phaseId
+                                ),
+                                textArg(
+                                        action.getLabel()
+                                ),
 
                                 textArg(
                                         action.getDeviceId()
@@ -406,8 +1225,6 @@ public class TursoAlarmRepo implements AlarmRepo {
                 }
             }
         }
-
-        return statements;
     }
 
 
@@ -421,33 +1238,55 @@ public class TursoAlarmRepo implements AlarmRepo {
             ActionParameter parameter
     ) {
         String parameterId =
-                usableId(parameter.getParameterId());
+                usableId(
+                        parameter.getParameterId()
+                );
 
         ActionValue value =
                 parameter.getValue();
 
         String valueType;
 
-        JsonObject stringVal = nullArg();
-        JsonObject uint32Val = nullArg();
-        JsonObject int32Val = nullArg();
-        JsonObject boolVal = nullArg();
-        JsonObject rgbaVal = nullArg();
-        JsonObject percentageVal = nullArg();
-        JsonObject fileIdArg = nullArg();
-        JsonObject doubleVal = nullArg();
+        JsonObject stringVal =
+                nullArg();
+
+        JsonObject uint32Val =
+                nullArg();
+
+        JsonObject int32Val =
+                nullArg();
+
+        JsonObject boolVal =
+                nullArg();
+
+        JsonObject rgbaVal =
+                nullArg();
+
+        JsonObject percentageVal =
+                nullArg();
+
+        JsonObject fileIdArg =
+                nullArg();
+
+        JsonObject doubleVal =
+                nullArg();
 
 
         switch (value.getValueCase()) {
 
             case STRING_VAL -> {
-                valueType = "STRING";
+                valueType =
+                        "STRING";
+
                 stringVal =
-                        textArg(value.getStringVal());
+                        textArg(
+                                value.getStringVal()
+                        );
             }
 
             case UINT32_VAL -> {
-                valueType = "UINT32";
+                valueType =
+                        "UINT32";
 
                 long unsigned =
                         Integer.toUnsignedLong(
@@ -455,11 +1294,14 @@ public class TursoAlarmRepo implements AlarmRepo {
                         );
 
                 uint32Val =
-                        integerArg(unsigned);
+                        integerArg(
+                                unsigned
+                        );
             }
 
             case INT32_VAL -> {
-                valueType = "INT32";
+                valueType =
+                        "INT32";
 
                 int32Val =
                         integerArg(
@@ -468,7 +1310,8 @@ public class TursoAlarmRepo implements AlarmRepo {
             }
 
             case BOOL_VAL -> {
-                valueType = "BOOL";
+                valueType =
+                        "BOOL";
 
                 boolVal =
                         boolArg(
@@ -477,7 +1320,8 @@ public class TursoAlarmRepo implements AlarmRepo {
             }
 
             case RGBA_VAL -> {
-                valueType = "RGBA";
+                valueType =
+                        "RGBA";
 
                 long rgba =
                         Integer.toUnsignedLong(
@@ -486,11 +1330,14 @@ public class TursoAlarmRepo implements AlarmRepo {
                         );
 
                 rgbaVal =
-                        integerArg(rgba);
+                        integerArg(
+                                rgba
+                        );
             }
 
             case PERCENTAGE -> {
-                valueType = "PERCENTAGE";
+                valueType =
+                        "PERCENTAGE";
 
                 percentageVal =
                         integerArg(
@@ -500,10 +1347,12 @@ public class TursoAlarmRepo implements AlarmRepo {
             }
 
             case FILE -> {
-                valueType = "FILE";
+                valueType =
+                        "FILE";
 
                 String fileId =
-                        UUID.randomUUID().toString();
+                        UUID.randomUUID()
+                                .toString();
 
                 FileData file =
                         value.getFile();
@@ -511,20 +1360,28 @@ public class TursoAlarmRepo implements AlarmRepo {
                 statements.add(
                         statement(
                                 """
-                                        INSERT INTO Files (
-                                            file_id,
-                                            filename,
-                                            file_type,
-                                            size_bytes,
-                                            file_content
-                                        )
-                                        VALUES (?, ?, ?, ?, ?)
-                                        """,
+                                INSERT INTO Files (
+                                    file_id,
+                                    filename,
+                                    file_type,
+                                    size_bytes,
+                                    file_content
+                                )
+                                VALUES (?, ?, ?, ?, ?)
+                                """,
 
-                                textArg(fileId),
-                                textArg(file.getFilename()),
-                                textArg(file.getFileType()),
-                                integerArg(file.getSizeBytes()),
+                                textArg(
+                                        fileId
+                                ),
+                                textArg(
+                                        file.getFilename()
+                                ),
+                                textArg(
+                                        file.getFileType()
+                                ),
+                                integerArg(
+                                        file.getSizeBytes()
+                                ),
 
                                 blobArg(
                                         file.getFileContent()
@@ -534,11 +1391,14 @@ public class TursoAlarmRepo implements AlarmRepo {
                 );
 
                 fileIdArg =
-                        textArg(fileId);
+                        textArg(
+                                fileId
+                        );
             }
 
             case DOUBLE_VAL -> {
-                valueType = "DOUBLE";
+                valueType =
+                        "DOUBLE";
 
                 doubleVal =
                         floatArg(
@@ -546,57 +1406,71 @@ public class TursoAlarmRepo implements AlarmRepo {
                         );
             }
 
-            case VALUE_NOT_SET -> throw new IllegalArgumentException(
-                    "Action parameter "
-                            + parameter.getParameterKey()
-                            + " has no value"
-            );
+            case VALUE_NOT_SET ->
+                    throw new IllegalArgumentException(
+                            "Action parameter "
+                                    + parameter.getParameterKey()
+                                    + " has no value"
+                    );
 
-            default -> throw new IllegalArgumentException(
-                    "Unsupported ActionValue: "
-                            + value.getValueCase()
-            );
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unsupported ActionValue: "
+                                    + value.getValueCase()
+                    );
         }
 
 
         JsonObject unitsArg =
                 parameter.hasUnits()
-                        ? textArg(parameter.getUnits())
+                        ? textArg(
+                        parameter.getUnits()
+                )
                         : nullArg();
 
 
         statements.add(
                 statement(
                         """
-                                INSERT INTO ActionParameters (
-                                    parameter_id,
-                                    action_id,
-                                    parameter_key,
-                                    label,
-                                    units,
-                                    value_type,
-                                
-                                    string_val,
-                                    uint32_val,
-                                    int32_val,
-                                    bool_val,
-                                    rgba_val,
-                                    percentage_val,
-                                    file_id,
-                                    double_val
-                                )
-                                VALUES (
-                                    ?, ?, ?, ?, ?, ?,
-                                    ?, ?, ?, ?, ?, ?, ?, ?
-                                )
-                                """,
+                        INSERT INTO ActionParameters (
+                            parameter_id,
+                            action_id,
+                            parameter_key,
+                            label,
+                            units,
+                            value_type,
 
-                        textArg(parameterId),
-                        textArg(actionId),
-                        textArg(parameter.getParameterKey()),
-                        textArg(parameter.getLabel()),
+                            string_val,
+                            uint32_val,
+                            int32_val,
+                            bool_val,
+                            rgba_val,
+                            percentage_val,
+                            file_id,
+                            double_val
+                        )
+                        VALUES (
+                            ?, ?, ?, ?, ?, ?,
+                            ?, ?, ?, ?, ?, ?, ?, ?
+                        )
+                        """,
+
+                        textArg(
+                                parameterId
+                        ),
+                        textArg(
+                                actionId
+                        ),
+                        textArg(
+                                parameter.getParameterKey()
+                        ),
+                        textArg(
+                                parameter.getLabel()
+                        ),
                         unitsArg,
-                        textArg(valueType),
+                        textArg(
+                                valueType
+                        ),
 
                         stringVal,
                         uint32Val,
@@ -606,6 +1480,25 @@ public class TursoAlarmRepo implements AlarmRepo {
                         percentageVal,
                         fileIdArg,
                         doubleVal
+                )
+        );
+    }
+
+
+    private void addDeleteOrphanFilesStatement(
+            List<SqlStatement> statements
+    ) {
+        statements.add(
+                statement(
+                        """
+                        DELETE FROM Files
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM ActionParameters
+                            WHERE ActionParameters.file_id =
+                                  Files.file_id
+                        )
+                        """
                 )
         );
     }
@@ -645,24 +1538,33 @@ public class TursoAlarmRepo implements AlarmRepo {
                         )
                 );
 
-        ensureSuccessful(beginResponse);
+        ensureSuccessful(
+                beginResponse
+        );
 
         String baton =
-                requireBaton(beginResponse);
+                requireBaton(
+                        beginResponse
+                );
 
 
         try {
 
             // ---------------------------------------------
-            // Execute all alarm writes
+            // Execute all writes
             // ---------------------------------------------
 
             List<JsonObject> requests =
                     new ArrayList<>();
 
-            for (SqlStatement statement : statements) {
+            for (
+                    SqlStatement statement
+                    : statements
+            ) {
                 requests.add(
-                        executeRequest(statement)
+                        executeRequest(
+                                statement
+                        )
                 );
             }
 
@@ -678,7 +1580,9 @@ public class TursoAlarmRepo implements AlarmRepo {
                             baton
                     );
 
-            ensureSuccessful(writeResponse);
+            ensureSuccessful(
+                    writeResponse
+            );
 
 
             // ---------------------------------------------
@@ -699,12 +1603,16 @@ public class TursoAlarmRepo implements AlarmRepo {
                             )
                     );
 
-            ensureSuccessful(commitResponse);
+            ensureSuccessful(
+                    commitResponse
+            );
 
         } catch (Exception e) {
 
             try {
-                rollback(baton);
+                rollback(
+                        baton
+                );
 
             } catch (Exception rollbackException) {
                 e.addSuppressed(
@@ -716,7 +1624,10 @@ public class TursoAlarmRepo implements AlarmRepo {
                 throw ioException;
             }
 
-            if (e instanceof RuntimeException runtimeException) {
+            if (
+                    e instanceof RuntimeException
+                            runtimeException
+            ) {
                 throw runtimeException;
             }
 
@@ -727,6 +1638,7 @@ public class TursoAlarmRepo implements AlarmRepo {
         }
     }
 
+
     private JsonObject executeQuery(
             SqlStatement statement
     ) throws IOException {
@@ -735,22 +1647,33 @@ public class TursoAlarmRepo implements AlarmRepo {
                 sendPipeline(
                         null,
                         List.of(
-                                executeRequest(statement),
+                                executeRequest(
+                                        statement
+                                ),
                                 closeRequest()
                         )
                 );
 
-        ensureSuccessful(response);
+        ensureSuccessful(
+                response
+        );
 
         JsonArray results =
-                response.getAsJsonArray("results");
+                response.getAsJsonArray(
+                        "results"
+                );
 
         return results
                 .get(0)
                 .getAsJsonObject()
-                .getAsJsonObject("response")
-                .getAsJsonObject("result");
+                .getAsJsonObject(
+                        "response"
+                )
+                .getAsJsonObject(
+                        "result"
+                );
     }
+
 
     private void rollback(
             String baton
@@ -774,7 +1697,9 @@ public class TursoAlarmRepo implements AlarmRepo {
                         )
                 );
 
-        ensureSuccessful(response);
+        ensureSuccessful(
+                response
+        );
     }
 
 
@@ -800,8 +1725,13 @@ public class TursoAlarmRepo implements AlarmRepo {
         JsonArray requestArray =
                 new JsonArray();
 
-        for (JsonObject request : requests) {
-            requestArray.add(request);
+        for (
+                JsonObject request
+                : requests
+        ) {
+            requestArray.add(
+                    request
+            );
         }
 
         body.add(
@@ -811,14 +1741,18 @@ public class TursoAlarmRepo implements AlarmRepo {
 
 
         URL url =
-                URI.create(pipelineUrl)
+                URI.create(
+                                pipelineUrl
+                        )
                         .toURL();
 
         HttpURLConnection connection =
                 (HttpURLConnection)
                         url.openConnection();
 
-        connection.setRequestMethod("POST");
+        connection.setRequestMethod(
+                "POST"
+        );
 
         connection.setRequestProperty(
                 "Authorization",
@@ -835,22 +1769,35 @@ public class TursoAlarmRepo implements AlarmRepo {
                 "application/json"
         );
 
-        connection.setConnectTimeout(10_000);
-        connection.setReadTimeout(20_000);
+        connection.setConnectTimeout(
+                10_000
+        );
 
-        connection.setDoOutput(true);
+        connection.setReadTimeout(
+                20_000
+        );
+
+        connection.setDoOutput(
+                true
+        );
 
 
         byte[] requestBody =
-                gson.toJson(body)
-                        .getBytes(StandardCharsets.UTF_8);
+                gson.toJson(
+                                body
+                        )
+                        .getBytes(
+                                StandardCharsets.UTF_8
+                        );
 
 
         try (
                 OutputStream output =
                         connection.getOutputStream()
         ) {
-            output.write(requestBody);
+            output.write(
+                    requestBody
+            );
         }
 
 
@@ -865,7 +1812,9 @@ public class TursoAlarmRepo implements AlarmRepo {
 
 
         String responseBody =
-                readAll(stream);
+                readAll(
+                        stream
+                );
 
 
         connection.disconnect();
@@ -934,7 +1883,9 @@ public class TursoAlarmRepo implements AlarmRepo {
                     JsonObject arg
                     : statement.args()
             ) {
-                args.add(arg);
+                args.add(
+                        arg
+                );
             }
 
             stmt.add(
@@ -993,7 +1944,9 @@ public class TursoAlarmRepo implements AlarmRepo {
                     element.getAsJsonObject();
 
             String type =
-                    result.get("type")
+                    result.get(
+                                    "type"
+                            )
                             .getAsString();
 
             if (!"ok".equals(type)) {
@@ -1011,12 +1964,15 @@ public class TursoAlarmRepo implements AlarmRepo {
     ) throws IOException {
 
         JsonElement baton =
-                response.get("baton");
+                response.get(
+                        "baton"
+                );
 
         if (
                 baton == null
                         || baton.isJsonNull()
-                        || baton.getAsString().isBlank()
+                        || baton.getAsString()
+                        .isBlank()
         ) {
             throw new IOException(
                     "Turso did not return a connection baton"
@@ -1032,7 +1988,9 @@ public class TursoAlarmRepo implements AlarmRepo {
             String previousBaton
     ) {
         JsonElement baton =
-                response.get("baton");
+                response.get(
+                        "baton"
+                );
 
         if (
                 baton == null
@@ -1055,7 +2013,9 @@ public class TursoAlarmRepo implements AlarmRepo {
     ) {
         return new SqlStatement(
                 sql,
-                List.of(args)
+                List.of(
+                        args
+                )
         );
     }
 
@@ -1097,7 +2057,9 @@ public class TursoAlarmRepo implements AlarmRepo {
          */
         arg.addProperty(
                 "value",
-                Long.toString(value)
+                Long.toString(
+                        value
+                )
         );
 
         return arg;
@@ -1128,7 +2090,9 @@ public class TursoAlarmRepo implements AlarmRepo {
             boolean value
     ) {
         return integerArg(
-                value ? 1 : 0
+                value
+                        ? 1
+                        : 0
         );
     }
 
@@ -1147,7 +2111,9 @@ public class TursoAlarmRepo implements AlarmRepo {
         arg.addProperty(
                 "base64",
                 Base64.getEncoder()
-                        .encodeToString(value)
+                        .encodeToString(
+                                value
+                        )
         );
 
         return arg;
@@ -1168,15 +2134,136 @@ public class TursoAlarmRepo implements AlarmRepo {
 
 
     // =========================================================
+    // Turso row helpers
+    // =========================================================
+
+    private JsonObject cell(
+            JsonArray row,
+            int index
+    ) {
+        return row.get(
+                        index
+                )
+                .getAsJsonObject();
+    }
+
+
+    private boolean nullCell(
+            JsonArray row,
+            int index
+    ) {
+        return "null".equals(
+                cell(
+                        row,
+                        index
+                )
+                        .get(
+                                "type"
+                        )
+                        .getAsString()
+        );
+    }
+
+
+    private String textCell(
+            JsonArray row,
+            int index
+    ) {
+        return cell(
+                row,
+                index
+        )
+                .get(
+                        "value"
+                )
+                .getAsString();
+    }
+
+
+    private long integerCell(
+            JsonArray row,
+            int index
+    ) {
+        return Long.parseLong(
+                textCell(
+                        row,
+                        index
+                )
+        );
+    }
+
+
+    private boolean boolCell(
+            JsonArray row,
+            int index
+    ) {
+        return integerCell(
+                row,
+                index
+        ) != 0;
+    }
+
+
+    private double doubleCell(
+            JsonArray row,
+            int index
+    ) {
+        return cell(
+                row,
+                index
+        )
+                .get(
+                        "value"
+                )
+                .getAsDouble();
+    }
+
+
+    private byte[] blobCell(
+            JsonArray row,
+            int index
+    ) {
+        return Base64.getDecoder()
+                .decode(
+                        cell(
+                                row,
+                                index
+                        )
+                                .get(
+                                        "base64"
+                                )
+                                .getAsString()
+                );
+    }
+
+
+    // =========================================================
     // Domain helpers
     // =========================================================
+
+    private void validateAlarmId(
+            AlarmId id
+    ) {
+        if (
+                id == null
+                        || id.getAlarmId()
+                        .isBlank()
+        ) {
+            throw new IllegalArgumentException(
+                    "Alarm ID cannot be blank"
+            );
+        }
+    }
+
 
     private boolean hasDay(
             Alarm alarm,
             DayOfWeek day
     ) {
         return alarm.getDaysList()
-                .contains(day);
+                .contains(
+                        day
+                );
     }
 
 
@@ -1186,7 +2273,9 @@ public class TursoAlarmRepo implements AlarmRepo {
         if (
                 existingId == null
                         || existingId.isBlank()
-                        || "NULL".equalsIgnoreCase(existingId)
+                        || "NULL".equalsIgnoreCase(
+                        existingId
+                )
         ) {
             return UUID.randomUUID()
                     .toString();
@@ -1256,10 +2345,14 @@ public class TursoAlarmRepo implements AlarmRepo {
             String line;
 
             while (
-                    (line = reader.readLine())
-                            != null
+                    (
+                            line =
+                                    reader.readLine()
+                    ) != null
             ) {
-                builder.append(line);
+                builder.append(
+                        line
+                );
             }
         }
 

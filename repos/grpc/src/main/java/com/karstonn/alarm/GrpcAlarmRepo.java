@@ -79,11 +79,14 @@ public class GrpcAlarmRepo implements AlarmRepo {
     public CompletableFuture<Alarm> getAlarm(
             AlarmId id
     ) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "getAlarm not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return stub.getAlarm(id);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -91,11 +94,14 @@ public class GrpcAlarmRepo implements AlarmRepo {
     public CompletableFuture<AlarmRequestResponse> updateAlarm(
             UpdateAlarmRequest request
     ) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "updateAlarm not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return stub.updateAlarm(request);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
@@ -103,11 +109,14 @@ public class GrpcAlarmRepo implements AlarmRepo {
     public CompletableFuture<AlarmRequestResponse> removeAlarm(
             AlarmId id
     ) {
-        return failedFuture(
-                new UnsupportedOperationException(
-                        "removeAlarm not implemented yet"
-                )
-        );
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return stub.removeAlarm(id);
+
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
     }
 
 
