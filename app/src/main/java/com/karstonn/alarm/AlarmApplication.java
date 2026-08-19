@@ -9,7 +9,10 @@ public class AlarmApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        this.alarmRepo = new AlarmDataStoreRepo(this);
+        this.alarmRepo = new GrpcAlarmRepo(
+                        "alarm-system-server-244710268941.europe-west2.run.app",
+                        443
+                );
         this.deviceRepo = new DebugDeviceRepo();
     }
     public AlarmRepo getAlarmRepo(){

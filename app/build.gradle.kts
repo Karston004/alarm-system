@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":proto"))
     implementation(project(":repos:java"))
     implementation(project(":repos:android"))
+    implementation(project(":repos:grpc"))
     implementation(libs.recyclerview)
 
     testImplementation(libs.junit)

@@ -3,7 +3,6 @@ FROM gradle:8.13-jdk21 AS build
 WORKDIR /workspace
 
 COPY cloud-settings.gradle .
-COPY cloud-root.gradle .
 
 COPY gradle/ ./gradle/
 
