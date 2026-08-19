@@ -5,9 +5,12 @@ WORKDIR /workspace
 COPY cloud-settings.gradle .
 COPY cloud-root.gradle .
 
+COPY gradle/ ./gradle/
+
 COPY server ./server
 COPY proto ./proto
 COPY repos/java ./repos/java
+COPY repos/server ./repos/server
 
 RUN gradle \
     --settings-file cloud-settings.gradle \
