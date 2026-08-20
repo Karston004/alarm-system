@@ -22,6 +22,15 @@ local.properties
 # Android captures
 captures/
 
+# PlatformIO
+/controller/esp32/.pio/
+
+/controller/esp32/.vscode/.browse.c_cpp.db*
+/controller/esp32/.vscode/c_cpp_properties.json
+/controller/esp32/.vscode/launch.json
+/controller/esp32/.vscode/ipch/
+
+
 # draw.io temporary/backup files
 *.drawio.bkp
 *.drawio.dtmp
