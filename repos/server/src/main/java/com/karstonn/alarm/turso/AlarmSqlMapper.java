@@ -3,6 +3,9 @@ package com.karstonn.alarm.turso;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
 import com.google.protobuf.ByteString;
 
@@ -23,11 +26,15 @@ import com.karstonn.alarmsystem.proto.UpdateAlarmRequest;
 
 import java.io.IOException;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public class AlarmSqlMapper {
+
+    private static final long UINT32_MAX =
+            4_294_967_295L;
 
     private final TursoClient turso;
 
@@ -488,13 +495,7 @@ public class AlarmSqlMapper {
                                     ap.label,
                                     ap.units,
                                     ap.value_type,
-                                    ap.string_val,
-                                    ap.uint32_val,
-                                    ap.int32_val,
-                                    ap.bool_val,
-                                    ap.rgba_val,
-                                    ap.percentage_val,
-                                    ap.double_val,
+                                    ap.value_json,
 
                                     f.filename,
                                     f.file_type,
@@ -530,13 +531,16 @@ public class AlarmSqlMapper {
             JsonArray row =
                     element.getAsJsonArray();
 
+            String parameterId =
+                    turso.textCell(
+                            row,
+                            0
+                    );
+
             ActionParameter.Builder parameter =
                     ActionParameter.newBuilder()
                             .setParameterId(
-                                    turso.textCell(
-                                            row,
-                                            0
-                                    )
+                                    parameterId
                             )
                             .setParameterKey(
                                     turso.textCell(
@@ -569,76 +573,123 @@ public class AlarmSqlMapper {
             ActionValue.Builder value =
                     ActionValue.newBuilder();
 
+            /*
+             * FILE values intentionally have NULL value_json.
+             * All other ActionValue types are represented as
+             * JSON scalar values.
+             */
+            JsonElement jsonValue =
+                    null;
+
+            if (!"FILE".equals(valueType)) {
+                jsonValue =
+                        readRequiredJsonValue(
+                                row,
+                                5,
+                                parameterId
+                        );
+            }
+
             switch (valueType) {
 
                 case "STRING" ->
                         value.setStringVal(
-                                turso.textCell(
-                                        row,
-                                        5
+                                readJsonString(
+                                        jsonValue,
+                                        valueType
                                 )
                         );
 
-                case "UINT32" ->
-                        value.setUint32Val(
-                                (int) turso.integerCell(
-                                        row,
-                                        6
-                                )
-                        );
+                case "UINT32" -> {
+                    long unsigned =
+                            readJsonInteger(
+                                    jsonValue,
+                                    valueType,
+                                    0,
+                                    UINT32_MAX
+                            );
 
-                case "INT32" ->
-                        value.setInt32Val(
-                                (int) turso.integerCell(
-                                        row,
-                                        7
-                                )
-                        );
+                    /*
+                     * protobuf-java represents uint32 using int.
+                     * Casting preserves the raw 32 bits.
+                     */
+                    value.setUint32Val(
+                            (int) unsigned
+                    );
+                }
+
+                case "INT32" -> {
+                    long signed =
+                            readJsonInteger(
+                                    jsonValue,
+                                    valueType,
+                                    Integer.MIN_VALUE,
+                                    Integer.MAX_VALUE
+                            );
+
+                    value.setInt32Val(
+                            (int) signed
+                    );
+                }
 
                 case "BOOL" ->
                         value.setBoolVal(
-                                turso.boolCell(
-                                        row,
-                                        8
+                                readJsonBoolean(
+                                        jsonValue,
+                                        valueType
                                 )
                         );
 
-                case "RGBA" ->
-                        value.getRgbaValBuilder()
-                                .setRgba(
-                                        (int) turso.integerCell(
-                                                row,
-                                                9
-                                        )
-                                );
+                case "RGBA" -> {
+                    long rgba =
+                            readJsonInteger(
+                                    jsonValue,
+                                    valueType,
+                                    0,
+                                    UINT32_MAX
+                            );
 
-                case "PERCENTAGE" ->
-                        value.getPercentageBuilder()
-                                .setValue(
-                                        (int) turso.integerCell(
-                                                row,
-                                                10
-                                        )
-                                );
+                    value.getRgbaValBuilder()
+                            .setRgba(
+                                    (int) rgba
+                            );
+                }
+
+                case "PERCENTAGE" -> {
+                    long percentage =
+                            readJsonInteger(
+                                    jsonValue,
+                                    valueType,
+                                    0,
+                                    UINT32_MAX
+                            );
+
+                    value.getPercentageBuilder()
+                            .setValue(
+                                    (int) percentage
+                            );
+                }
 
                 case "DOUBLE" ->
                         value.setDoubleVal(
-                                turso.doubleCell(
-                                        row,
-                                        11
+                                readJsonDouble(
+                                        jsonValue,
+                                        valueType
                                 )
                         );
 
                 case "FILE" -> {
 
                     if (
-                            turso.nullCell(row, 12)
-                                    || turso.nullCell(row, 13)
-                                    || turso.nullCell(row, 14)
-                                    || turso.nullCell(row, 15)
+                            turso.nullCell(row, 6)
+                                    || turso.nullCell(row, 7)
+                                    || turso.nullCell(row, 8)
+                                    || turso.nullCell(row, 9)
                     ) {
                         throw new IOException(
-                                "FILE parameter is missing its Files row"
+                                "FILE parameter "
+                                        + parameterId
+                                        + " is missing its Files row"
                         );
                     }
 
@@ -646,26 +697,26 @@ public class AlarmSqlMapper {
                             .setFilename(
                                     turso.textCell(
                                             row,
-                                            12
+                                            6
                                     )
                             )
                             .setFileType(
                                     turso.textCell(
                                             row,
-                                            13
+                                            7
                                     )
                             )
                             .setSizeBytes(
                                     turso.integerCell(
                                             row,
-                                            14
+                                            8
                                     )
                             )
                             .setFileContent(
                                     ByteString.copyFrom(
                                             turso.blobCell(
                                                     row,
-                                                    15
+                                                    9
                                             )
                                     )
                             );
@@ -1137,7 +1188,7 @@ public class AlarmSqlMapper {
 
 
     // =========================================================
-    // Parameters
+    // Parameters -> SQL
     // =========================================================
 
     private void addParameterStatements(
@@ -1155,28 +1206,10 @@ public class AlarmSqlMapper {
 
         String valueType;
 
-        JsonObject stringVal =
-                turso.nullArg();
-
-        JsonObject uint32Val =
-                turso.nullArg();
-
-        JsonObject int32Val =
-                turso.nullArg();
-
-        JsonObject boolVal =
-                turso.nullArg();
-
-        JsonObject rgbaVal =
-                turso.nullArg();
-
-        JsonObject percentageVal =
+        JsonObject valueJsonArg =
                 turso.nullArg();
 
         JsonObject fileIdArg =
-                turso.nullArg();
-
-        JsonObject doubleVal =
                 turso.nullArg();
 
 
@@ -1186,8 +1219,8 @@ public class AlarmSqlMapper {
                 valueType =
                         "STRING";
 
-                stringVal =
-                        turso.textArg(
+                valueJsonArg =
+                        jsonStringArg(
                                 value.getStringVal()
                         );
             }
@@ -1201,8 +1234,8 @@ public class AlarmSqlMapper {
                                 value.getUint32Val()
                         );
 
-                uint32Val =
-                        turso.integerArg(
+                valueJsonArg =
+                        jsonIntegerArg(
                                 unsigned
                         );
             }
@@ -1211,8 +1244,8 @@ public class AlarmSqlMapper {
                 valueType =
                         "INT32";
 
-                int32Val =
-                        turso.integerArg(
+                valueJsonArg =
+                        jsonIntegerArg(
                                 value.getInt32Val()
                         );
             }
@@ -1221,8 +1254,8 @@ public class AlarmSqlMapper {
                 valueType =
                         "BOOL";
 
-                boolVal =
-                        turso.boolArg(
+                valueJsonArg =
+                        jsonBooleanArg(
                                 value.getBoolVal()
                         );
             }
@@ -1237,8 +1270,8 @@ public class AlarmSqlMapper {
                                         .getRgba()
                         );
 
-                rgbaVal =
-                        turso.integerArg(
+                valueJsonArg =
+                        jsonIntegerArg(
                                 rgba
                         );
             }
@@ -1247,10 +1280,15 @@ public class AlarmSqlMapper {
                 valueType =
                         "PERCENTAGE";
 
-                percentageVal =
-                        turso.integerArg(
+                long percentage =
+                        Integer.toUnsignedLong(
                                 value.getPercentage()
                                         .getValue()
+                        );
+
+                valueJsonArg =
+                        jsonIntegerArg(
+                                percentage
                         );
             }
 
@@ -1308,8 +1346,8 @@ public class AlarmSqlMapper {
                 valueType =
                         "DOUBLE";
 
-                doubleVal =
-                        turso.floatArg(
+                valueJsonArg =
+                        jsonDoubleArg(
                                 value.getDoubleVal()
                         );
             }
@@ -1347,20 +1385,10 @@ public class AlarmSqlMapper {
                             label,
                             units,
                             value_type,
-
-                            string_val,
-                            uint32_val,
-                            int32_val,
-                            bool_val,
-                            rgba_val,
-                            percentage_val,
-                            file_id,
-                            double_val
+                            value_json,
+                            file_id
                         )
-                        VALUES (
-                            ?, ?, ?, ?, ?, ?,
-                            ?, ?, ?, ?, ?, ?, ?, ?
-                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """,
 
                         turso.textArg(
@@ -1376,22 +1404,283 @@ public class AlarmSqlMapper {
                                 parameter.getLabel()
                         ),
                         unitsArg,
+
                         turso.textArg(
                                 valueType
                         ),
 
-                        stringVal,
-                        uint32Val,
-                        int32Val,
-                        boolVal,
-                        rgbaVal,
-                        percentageVal,
-                        fileIdArg,
-                        doubleVal
+                        valueJsonArg,
+                        fileIdArg
                 )
         );
     }
 
+
+    // =========================================================
+    // JSON -> Protobuf Helpers
+    // =========================================================
+
+    private JsonElement readRequiredJsonValue(
+            JsonArray row,
+            int index,
+            String parameterId
+    ) throws IOException {
+
+        if (turso.nullCell(row, index)) {
+            throw new IOException(
+                    "Non-FILE parameter "
+                            + parameterId
+                            + " has NULL value_json"
+            );
+        }
+
+        String json =
+                turso.textCell(
+                        row,
+                        index
+                );
+
+        try {
+            JsonElement value =
+                    JsonParser.parseString(
+                            json
+                    );
+
+            /*
+             * SQL NULL and JSON null are different.
+             * Neither represents a valid ActionValue here.
+             */
+            if (value.isJsonNull()) {
+                throw new IOException(
+                        "Parameter "
+                                + parameterId
+                                + " contains JSON null"
+                );
+            }
+
+            return value;
+
+        } catch (JsonParseException e) {
+            throw new IOException(
+                    "Parameter "
+                            + parameterId
+                            + " contains invalid JSON",
+                    e
+            );
+        }
+    }
+
+
+    private String readJsonString(
+            JsonElement value,
+            String valueType
+    ) throws IOException {
+
+        if (
+                !value.isJsonPrimitive()
+                        || !value.getAsJsonPrimitive()
+                        .isString()
+        ) {
+            throw invalidJsonType(
+                    valueType,
+                    "string"
+            );
+        }
+
+        return value.getAsString();
+    }
+
+
+    private boolean readJsonBoolean(
+            JsonElement value,
+            String valueType
+    ) throws IOException {
+
+        if (
+                !value.isJsonPrimitive()
+                        || !value.getAsJsonPrimitive()
+                        .isBoolean()
+        ) {
+            throw invalidJsonType(
+                    valueType,
+                    "boolean"
+            );
+        }
+
+        return value.getAsBoolean();
+    }
+
+
+    private long readJsonInteger(
+            JsonElement value,
+            String valueType,
+            long min,
+            long max
+    ) throws IOException {
+
+        if (
+                !value.isJsonPrimitive()
+                        || !value.getAsJsonPrimitive()
+                        .isNumber()
+        ) {
+            throw invalidJsonType(
+                    valueType,
+                    "integer"
+            );
+        }
+
+        try {
+            BigDecimal decimal =
+                    value.getAsJsonPrimitive()
+                            .getAsBigDecimal();
+
+            long result =
+                    decimal.longValueExact();
+
+            if (
+                    result < min
+                            || result > max
+            ) {
+                throw new IOException(
+                        valueType
+                                + " JSON value is out of range: "
+                                + result
+                );
+            }
+
+            return result;
+
+        } catch (ArithmeticException | NumberFormatException e) {
+            throw new IOException(
+                    valueType
+                            + " JSON value is not a valid integer",
+                    e
+            );
+        }
+    }
+
+
+    private double readJsonDouble(
+            JsonElement value,
+            String valueType
+    ) throws IOException {
+
+        if (
+                !value.isJsonPrimitive()
+                        || !value.getAsJsonPrimitive()
+                        .isNumber()
+        ) {
+            throw invalidJsonType(
+                    valueType,
+                    "number"
+            );
+        }
+
+        double result;
+
+        try {
+            result =
+                    value.getAsDouble();
+
+        } catch (NumberFormatException e) {
+            throw new IOException(
+                    valueType
+                            + " JSON value is not a valid number",
+                    e
+            );
+        }
+
+        if (!Double.isFinite(result)) {
+            throw new IOException(
+                    valueType
+                            + " JSON value must be finite"
+            );
+        }
+
+        return result;
+    }
+
+
+    private IOException invalidJsonType(
+            String valueType,
+            String expected
+    ) {
+        return new IOException(
+                valueType
+                        + " expects a JSON "
+                        + expected
+                        + " value"
+        );
+    }
+
+
+    // =========================================================
+    // Protobuf -> JSON Helpers
+    // =========================================================
+
+    private JsonObject jsonStringArg(
+            String value
+    ) {
+        /*
+         * JsonPrimitive.toString() performs the required JSON
+         * escaping and quoting.
+         *
+         * Example:
+         *   Hello "world"
+         *
+         * becomes:
+         *   "Hello \\"world\\""
+         */
+        return turso.textArg(
+                new JsonPrimitive(
+                        value
+                ).toString()
+        );
+    }
+
+
+    private JsonObject jsonIntegerArg(
+            long value
+    ) {
+        return turso.textArg(
+                Long.toString(
+                        value
+                )
+        );
+    }
+
+
+    private JsonObject jsonBooleanArg(
+            boolean value
+    ) {
+        return turso.textArg(
+                Boolean.toString(
+                        value
+                )
+        );
+    }
+
+
+    private JsonObject jsonDoubleArg(
+            double value
+    ) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(
+                    "DOUBLE ActionValue must be finite"
+            );
+        }
+
+        return turso.textArg(
+                Double.toString(
+                        value
+                )
+        );
+    }
+
+
+    // =========================================================
+    // File Cleanup
+    // =========================================================
 
     private void addDeleteOrphanFilesStatement(
             List<SqlStatement> statements

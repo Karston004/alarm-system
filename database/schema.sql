@@ -46,7 +46,6 @@ CREATE TABLE DeviceCapabilities (
 -- Parameter Requirements
 --
 -- Corresponds to ParameterRequirement.oneof requirement.
--- Only the columns relevant to requirement_type are populated.
 -- =========================================================
 
 CREATE TABLE ParameterRequirements (
@@ -70,34 +69,8 @@ CREATE TABLE ParameterRequirements (
             )
         ),
 
-    -- StringRequirement
-    string_min_length INTEGER,
-    string_max_length INTEGER,
-    string_ascii_only BOOLEAN,
-
-    -- UINT32Requirement
-    uint32_min INTEGER,
-    uint32_max INTEGER,
-
-    -- INT32Requirement
-    int32_min INTEGER,
-    int32_max INTEGER,
-
-    -- RGBARequirement
-    rgba_uses_alpha BOOLEAN,
-
-    -- PercentageRequirement
-    percentage_min INTEGER,
-    percentage_max INTEGER,
-    percentage_step INTEGER,
-
-    -- FileRequirement
-    file_max_size INTEGER,
-    file_type TEXT,
-
-    -- DoubleRequirement
-    double_min REAL,
-    double_max REAL,
+    requirement_json TEXT NOT NULL
+        CHECK (json_valid(requirement_json)),
 
     PRIMARY KEY (
         device_id,
@@ -206,7 +179,7 @@ CREATE TABLE Files (
 --
 -- Corresponds to ActionValue.oneof value.
 --
--- value_type determines which value column is populated.
+-- Check enforces either a value_Type XOR a file_id
 -- =========================================================
 
 CREATE TABLE ActionParameters (
@@ -232,44 +205,29 @@ CREATE TABLE ActionParameters (
             )
         ),
 
-    string_val TEXT,
-
-    uint32_val INTEGER
+    value_json TEXT
         CHECK (
-            uint32_val IS NULL
-            OR (
-                uint32_val >= 0
-                AND uint32_val <= 4294967295
-            )
+            value_json IS NULL
+            OR json_valid(value_json)
         ),
-
-    int32_val INTEGER
-        CHECK (
-            int32_val IS NULL
-            OR (
-                int32_val >= -2147483648
-                AND int32_val <= 2147483647
-            )
-        ),
-
-    bool_val BOOLEAN,
-
-    rgba_val INTEGER
-        CHECK (
-            rgba_val IS NULL
-            OR (
-                rgba_val >= 0
-                AND rgba_val <= 4294967295
-            )
-        ),
-
-    percentage_val INTEGER,
 
     file_id TEXT,
 
-    double_val REAL,
-
     UNIQUE (action_id, parameter_key),
+
+    CHECK (
+        (
+            value_type = 'FILE'
+            AND file_id IS NOT NULL
+            AND value_json IS NULL
+        )
+        OR
+        (
+            value_type <> 'FILE'
+            AND file_id IS NULL
+            AND value_json IS NOT NULL
+        )
+    ),
 
     FOREIGN KEY (action_id)
         REFERENCES Actions(action_id)
@@ -279,7 +237,6 @@ CREATE TABLE ActionParameters (
         REFERENCES Files(file_id)
         ON DELETE RESTRICT
 );
-
 -- =========================================================
 -- Indexes
 -- =========================================================
