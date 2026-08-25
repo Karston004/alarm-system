@@ -7,24 +7,35 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(
+            JavaLanguageVersion.of(21)
+        )
     }
 }
 
 dependencies {
-    api("com.google.protobuf:protobuf-java:4.35.1")
+    api(
+        "com.google.protobuf:protobuf-java:4.35.1"
+    )
 
-    api("io.grpc:grpc-protobuf:1.62.2")
-    api("io.grpc:grpc-stub:1.62.2")
+    api(
+        "io.grpc:grpc-protobuf:1.62.2"
+    )
 
-    compileOnly("javax.annotation:javax.annotation-api:1.3.2")
+    api(
+        "io.grpc:grpc-stub:1.62.2"
+    )
+
+    compileOnly(
+        "javax.annotation:javax.annotation-api:1.3.2"
+    )
 }
 
 
 // =========================================================
 // Nanopb source set
 //
-// Uses the SAME protobuf definitions as main, but generates
+// Uses the same protobuf definitions as main, but generates
 // nanopb C output instead of Java.
 // =========================================================
 
@@ -39,8 +50,23 @@ sourceSets {
 }
 
 
+// =========================================================
+// Nanopb configuration
+// =========================================================
+
 val nanopbPlugin =
     System.getenv("NANOPB_PLUGIN")
+
+/*
+ * Protoc does not pass its protobuf search paths to code
+ * generation plugins.
+ *
+ * Pass the directory explicitly so nanopb can locate:
+ *
+ *     src/main/proto/alarm.options
+ */
+val nanopbOptionsPath =
+    "proto/src/main/proto"
 
 
 // =========================================================
@@ -70,8 +96,8 @@ protobuf {
         // -------------------------------------------------
         // Nanopb
         //
-        // Merely configuring :proto does NOT require this
-        // environment variable anymore.
+        // Merely configuring :proto does not require the
+        // NANOPB_PLUGIN environment variable.
         // -------------------------------------------------
 
         id("nanopb") {
@@ -108,8 +134,10 @@ protobuf {
 
         ofSourceSet("nanopb").forEach { task ->
 
-            // Java is automatically generated for Java
-            // source sets, so remove it here.
+            /*
+             * Java is automatically generated for Java
+             * source sets, so remove it here.
+             */
             task.builtins {
                 remove(
                     getByName("java")
@@ -118,12 +146,30 @@ protobuf {
 
 
             task.plugins {
-                id("nanopb") { }
+                id("nanopb") {
+
+                    /*
+                     * Allow nanopb to find alarm.options.
+                     */
+                    option(
+                        "-I$nanopbOptionsPath"
+                    )
+
+                    /*
+                     * Fail generation if alarm.options
+                     * references a field that does not exist.
+                     */
+                    option(
+                        "--error-on-unmatched"
+                    )
+                }
             }
 
 
-            // Only complain about nanopb when somebody
-            // ACTUALLY requests nanopb generation.
+            /*
+             * Only require nanopb when somebody actually
+             * requests nanopb generation.
+             */
             task.doFirst {
 
                 if (nanopbPlugin.isNullOrBlank()) {

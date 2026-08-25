@@ -3,6 +3,8 @@ Import("env")
 import os
 
 project_dir = env.subst("$PROJECT_DIR")
+pio_environment = env.subst("$PIOENV")
+project_libdeps_dir = env.subst("$PROJECT_LIBDEPS_DIR")
 
 generated_proto_dir = os.path.abspath(
     os.path.join(
@@ -12,15 +14,24 @@ generated_proto_dir = os.path.abspath(
         "proto",
         "build",
         "generated",
-        "sources",
+        "source",
         "proto",
-        "main",
+        "nanopb",
         "nanopb"
     )
 )
 
+nanopb_include_dir = os.path.join(
+    project_libdeps_dir,
+    pio_environment,
+    "Nanopb"
+)
+
 env.Append(
-    CPPPATH=[generated_proto_dir]
+    CPPPATH=[
+        generated_proto_dir,
+        nanopb_include_dir
+    ]
 )
 
 env.BuildSources(

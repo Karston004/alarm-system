@@ -5,7 +5,6 @@
 
 #include <cstdio>
 
-
 DebugOledDriver::DebugOledDriver()
     : display(
         OLED_WIDTH,
@@ -83,7 +82,31 @@ bool DebugOledDriver::execute(
      * continue displaying / scrolling it after execute()
      * has returned.
      */
+    if (
+    action.parameters_count > 0 &&
+    action.parameters == nullptr
+) {
+    return false;
+}
+
+    currentParameters.clear();
+
+    if (action.parameters_count > 0) {
+        currentParameters.assign(
+            action.parameters,
+            action.parameters + action.parameters_count
+        );
+    }
+
     currentAction = action;
+
+    currentAction.parameters_count =
+        static_cast<pb_size_t>(currentParameters.size());
+
+    currentAction.parameters =
+        currentParameters.empty()
+            ? nullptr
+            : currentParameters.data();
 
     hasAction = true;
 
@@ -96,6 +119,15 @@ bool DebugOledDriver::execute(
     return true;
 }
 
+/* Debug Device returns no capabilities
+** Is to be called manually for debugging purposes
+*/
+DeviceCapabilityView DebugOledDriver::getCapabilities() const {
+    return {
+        nullptr,
+        0
+    };
+}
 
 // ======================================================
 // Periodic update

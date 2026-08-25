@@ -10,7 +10,7 @@ alarm_system.v1.DeviceId.id                        max_size:37
 # ======================================================
 
 alarm_system.v1.Action.label                       max_size:32
-alarm_system.v1.Action.parameters                  max_count:16
+alarm_system.v1.Action.parameters                  type:FT_POINTER
 
 alarm_system.v1.DeviceCapabilityKey.key            max_size:32
 
@@ -35,3 +35,24 @@ alarm_system.v1.ActionValue.string_val             max_size:48
 
 alarm_system.v1.FileData.filename                  max_size:48
 alarm_system.v1.FileData.file_type                 max_size:32
+
+# ======================================================
+# Controller
+# ======================================================
+
+alarm_system.v1.ControllerId.id                    max_size:37
+
+# ======================================================
+# Device Capability Descriptions
+# ======================================================
+
+alarm_system.v1.Device.label                       max_size:32
+alarm_system.v1.Device.capabilities                type:FT_POINTER
+
+alarm_system.v1.DeviceCapability.label             max_size:32
+alarm_system.v1.DeviceCapability.parameter_requirements type:FT_POINTER
+
+alarm_system.v1.ParameterRequirement.key           max_size:24
+alarm_system.v1.ParameterRequirement.label         max_size:24
+
+alarm_system.v1.FileRequirement.fileType           max_size:32

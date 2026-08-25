@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Adafruit_SSD1306.h>
+#include <vector>
 
 #include "devices/DeviceDriver.h"
 
@@ -13,9 +14,12 @@ public:
         const alarm_system_v1_Action& action
     ) override;
 
+    DeviceCapabilityView getCapabilities() const override;
+
     void update();
 
 private:
+    std::vector<alarm_system_v1_ActionParameter> currentParameters;
     static constexpr uint8_t OLED_ADDRESS = 0x3C;
 
     static constexpr int OLED_WIDTH = 128;
