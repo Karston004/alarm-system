@@ -1,0 +1,37 @@
+# ======================================================
+# IDs
+# ======================================================
+
+alarm_system.v1.ActionId.action_id                 max_size:37
+alarm_system.v1.DeviceId.id                        max_size:37
+
+# ======================================================
+# Actions
+# ======================================================
+
+alarm_system.v1.Action.label                       max_size:32
+alarm_system.v1.Action.parameters                  max_count:16
+
+alarm_system.v1.DeviceCapabilityKey.key            max_size:32
+
+# ======================================================
+# Action Parameters
+# ======================================================
+
+alarm_system.v1.ActionParameter.parameter_id       max_size:37
+alarm_system.v1.ActionParameter.parameter_key      max_size:24
+alarm_system.v1.ActionParameter.label              max_size:24
+alarm_system.v1.ActionParameter.units              max_size:12
+
+# ======================================================
+# Action Values
+# ======================================================
+
+alarm_system.v1.ActionValue.string_val             max_size:48
+
+# ======================================================
+# File metadata
+# ======================================================
+
+alarm_system.v1.FileData.filename                  max_size:48
+alarm_system.v1.FileData.file_type                 max_size:32
