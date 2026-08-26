@@ -152,6 +152,17 @@ service AlarmRepoService {
   rpc ListAlarms(AlarmListRequest) returns (AlarmListResponse);
 }
 
+message GetControllerScheduleRequest {
+  ControllerId controller_id = 1;
+}
+
+//Expect a slimmed-down alarm with only phases relevant to the controller
+message GetControllerScheduleResponse {
+  bool success = 1;
+  string msg = 2;
+  repeated Alarm alarms = 3;
+}
+
 // --------- Controller ---------
 // Controllers are responsible to execute device action
 // But devices are independent - the controller responsible can be swapped
@@ -208,7 +219,6 @@ message RequestIDRequest {}
 message RequestIDResponse {
   ControllerId controller_id= 1;
 }
-
 
 // --------- Controller Repo Service ---------
 service ControllerRegistryService {
