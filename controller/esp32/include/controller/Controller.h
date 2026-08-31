@@ -1,5 +1,8 @@
 #pragma once
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+
 #include "alarm.pb.h"
 
 #include "network/MqttClient.h"
@@ -13,6 +16,7 @@
 #include "devices/DeviceDriver.h"
 
 #include "server/ControllerApiClient.h"
+#include "concurrency/RetryTask.h"
 
 class Controller
 {
@@ -32,4 +36,12 @@ private:
     LocalRepo localRepo;
     ControllerApiClient controllerApiClient;
     Scheduler scheduler;
+
+    void ensureControllerId();
+
+    void trySync();
+    bool sync();
+
+    void tryGetAlarms();
+    bool getAlarms();
 };
