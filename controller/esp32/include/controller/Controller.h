@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string>
+#include <mutex>
 
 #include "alarm.pb.h"
 
@@ -15,6 +16,7 @@
 
 #include "devices/LocalDeviceRegistry.h"
 #include "devices/DeviceDriver.h"
+#include "devices/ExecutionManager.h"
 
 #include "server/ControllerApiClient.h"
 #include "server/ControllerMqttClient.h"
@@ -37,11 +39,14 @@ private:
     LocalDeviceRegistry &localDeviceRegistry;
     std::string label;
 
-    std::vector<alarm_system_v1_Alarm> alarms;
     LocalRepo localRepo;
+    ExecutionManager executionManager;
+
     ControllerApiClient controllerApiClient;
     ControllerMqttClient controllerMqttClient;
     Scheduler scheduler;
+
+    std::atomic_bool getAlarmsRunning{false};
 
     void ensureControllerId();
 
