@@ -1,18 +1,26 @@
 #pragma once
 
-/*
-<functional> is additional Overhead compared to normal embedded system options
-But ESP32 is large and the function will be used rarely
-And I like its simplification
-*/
 #include <functional>
+#include <string>
+
+#include <ESP32MQTTClient.h>
+
+struct MqttConfig
+{
+    const char *broker;
+    uint16_t port;
+
+    const char *username;
+    const char *password;
+
+    const char *clientId;
+
+    const char *rootCa;
+};
 
 class MqttClient
 {
 public:
-    MqttClient(const char *broker, int port);
-    bool initalise();
-
     enum class MqttResult
     {
         SUCCESS,
@@ -21,18 +29,29 @@ public:
         PUBLISH_FAILED
     };
 
-    MqttResult subscribe(const char *topic);
-    MqttResult publish(const char *topic, const char *message);
-
     using MessageCallback = std::function<void(
         const char *topic,
         const uint8_t *payload,
         size_t length)>;
+
+    explicit MqttClient(const MqttConfig &config);
+
+    void initialise();
+
+    MqttResult subscribe(const char *topic);
+
+    MqttResult publish(
+        const char *topic,
+        const char *message);
+
     void setMessageCallback(MessageCallback callback);
 
-private:
-    MessageCallback messageCallback;
+    bool isConnected();
 
-    const char *broker;
-    int port;
+private:
+    MqttConfig config;
+
+    ESP32MQTTClient mqttClient;
+
+    MessageCallback messageCallback;
 };
