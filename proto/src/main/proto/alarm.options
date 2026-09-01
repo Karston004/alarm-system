@@ -41,6 +41,7 @@ alarm_system.v1.FileData.file_type                 max_size:32
 # ======================================================
 
 alarm_system.v1.ControllerId.id                    max_size:37
+alarm_system.v1.Controller.label                   max_size:64
 
 # ======================================================
 # Device Capability Descriptions
