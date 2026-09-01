@@ -1,5 +1,7 @@
 #include "concurrency/RetryTask.h"
 
+int32_t addJitter(int32_t val);
+
 void RetryTask::start(
     Attempt attempt,
     Config config,
