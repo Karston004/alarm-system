@@ -37,6 +37,14 @@ alarm_system.v1.FileData.filename                  max_size:48
 alarm_system.v1.FileData.file_type                 max_size:32
 
 # ======================================================
+# Alarm Structure
+# ======================================================
+
+alarm_system.v1.AlarmPhase.actions                 type:FT_POINTER
+alarm_system.v1.Alarm.alarm_phases                 type:FT_POINTER
+alarm_system.v1.Alarm.days                         type:FT_POINTER
+
+# ======================================================
 # Controller
 # ======================================================
 
