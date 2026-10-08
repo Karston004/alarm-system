@@ -5,8 +5,10 @@
 class ExecutionManager
 {
 public:
-    ExecutionManager(LocalDeviceRegistry &localDeviceRegistry);
-    void executePhase(alarm_system_v1_AlarmPhase phase);
+    ExecutionManager(LocalDeviceRegistry &deviceReg);
+
+    void executePhase(
+        const alarm_system_v1_AlarmPhase &phase);
 
 private:
     LocalDeviceRegistry &localDeviceRegistry;

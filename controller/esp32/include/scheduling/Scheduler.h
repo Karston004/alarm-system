@@ -1,16 +1,24 @@
 #pragma once
 
 #include <vector>
+#include <functional>
+
+#include "alarm.pb.h"
 
 class Scheduler
 {
 public:
-    void setEvents(std::vector<alarm_system_v1_Alarm> alarms);
+    using TriggerCallback =
+        std::function<void(const alarm_system_v1_AlarmPhase &)>;
 
-    void setTriggerCallback(
-        std::function<void(const alarm_system_v1_AlarmPhase)> callback);
+    void setEvents(
+        const std::vector<alarm_system_v1_Alarm> &alarms);
+
+    void setTriggerCallback(TriggerCallback callback);
 
 private:
-    std::vector<alarm_system_v1_AlarmPhase> phases;
-    std::function<void(const alarm_system_v1_Action &)> callback;
+    // Non-owning pointers to phases held by LocalRepo
+    std::vector<const alarm_system_v1_AlarmPhase *> phases;
+
+    TriggerCallback callback;
 };

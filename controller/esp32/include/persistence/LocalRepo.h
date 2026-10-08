@@ -9,8 +9,8 @@
 class LocalRepo
 {
 public:
-    std::vector<alarm_system_v1_Alarm> getAlarms();
-    void saveAlarms(std::vector<alarm_system_v1_Alarm> alarms);
+    const std::vector<alarm_system_v1_Alarm> &getAlarms();
+    void saveAlarms(std::vector<alarm_system_v1_Alarm> &&alarms);
 
     using AlarmsUpdatedCallback =
         std::function<void()>;

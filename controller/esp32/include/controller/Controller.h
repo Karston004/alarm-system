@@ -60,5 +60,5 @@ private:
 
     void onAlarmsUpdated();
     void onMqttPing();
-    void onPhaseTrigger(alarm_system_v1_AlarmPhase phase);
+    void onPhaseTrigger(const alarm_system_v1_AlarmPhase &phase);
 };
