@@ -1,57 +1,66 @@
 #pragma once
 
+#include <atomic>
+#include <cstdint>
 #include <functional>
+#include <mutex>
 #include <string>
+#include <vector>
 
-#include <ESP32MQTTClient.h>
+#include <mqtt_client.h>
 
 struct MqttConfig
 {
-    const char *broker;
-    uint16_t port;
+    std::string broker;
+    uint16_t port = 8883;
 
-    const char *username;
-    const char *password;
-
-    const char *clientId;
-
-    const char *rootCa;
+    std::string username;
+    std::string password;
+    std::string clientId;
+    std::string rootCa;
 };
 
 class MqttClient
 {
 public:
-    enum class MqttResult
-    {
-        SUCCESS,
-        CONNECTION_FAILED,
-        SUBSCRIBE_FAILED,
-        PUBLISH_FAILED
-    };
-
     using MessageCallback = std::function<void(
-        const char *topic,
-        const uint8_t *payload,
-        size_t length)>;
+        const std::string &topic,
+        const std::string &payload)>;
 
-    explicit MqttClient(const MqttConfig &config);
+    explicit MqttClient(MqttConfig config);
+    ~MqttClient();
 
-    void initialise();
+    MqttClient(const MqttClient &) = delete;
+    MqttClient &operator=(const MqttClient &) = delete;
 
-    MqttResult subscribe(const char *topic);
+    bool initialise();
 
-    MqttResult publish(
-        const char *topic,
-        const char *message);
+    // Remember topics and restore them after reconnection.
+    bool subscribe(const std::string &topic);
+
+    bool publish(
+        const std::string &topic,
+        const std::string &message);
 
     void setMessageCallback(MessageCallback callback);
 
-    bool isConnected();
+    bool isConnected() const;
 
 private:
+    static void eventHandler(
+        void *args,
+        esp_event_base_t base,
+        int32_t eventId,
+        void *eventData);
+
+    void handleEvent(esp_mqtt_event_handle_t event);
+
     MqttConfig config;
+    esp_mqtt_client_handle_t client = nullptr;
 
-    ESP32MQTTClient mqttClient;
+    std::atomic<bool> connected{false};
 
+    std::mutex mutex;
+    std::vector<std::string> subscriptions;
     MessageCallback messageCallback;
 };

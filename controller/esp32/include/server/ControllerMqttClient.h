@@ -17,5 +17,7 @@ private:
     MqttClient &mqttClient;
     EventCallback eventCallback;
 
-    void pingHandler(const char *topic, const uint8_t *payload, size_t length);
+    void pingHandler(
+        const std::string &topic,
+        const std::string &payload);
 };
