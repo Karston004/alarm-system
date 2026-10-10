@@ -1,8 +1,9 @@
 #include "concurrency/RetryTask.h"
+#include <esp_random.h>
 
 int32_t addJitter(int32_t val);
 
-void RetryTask::start(
+bool RetryTask::start(
     Attempt attempt,
     Config config,
     const char *taskName)
@@ -11,13 +12,21 @@ void RetryTask::start(
         std::move(attempt),
         config};
 
-    xTaskCreate(
+    BaseType_t result = xTaskCreate(
         taskEntry,
         taskName,
         4096,
         context,
         1,
         nullptr);
+
+    if (result != pdPASS)
+    {
+        delete context;
+        return false;
+    }
+
+    return true;
 }
 
 void RetryTask::taskEntry(void *parameter)

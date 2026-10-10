@@ -16,7 +16,7 @@ public:
 
     using Attempt = std::function<bool()>;
 
-    static void start(
+    static bool start(
         Attempt attempt,
         Config config,
         const char *taskName = "RetryTask");
